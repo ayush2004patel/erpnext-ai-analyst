@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-09-08 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "skill_name",
+  "status",
+  "inputs",
+  "findings",
+  "metrics",
+  "evidence"
+ ],
+ "fields": [
+  {
+   "fieldname": "skill_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Skill Name",
+   "reqd": 1
+  },
+  {
+   "description": "SkillResult.status: ok / partial / no_data / error",
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Status",
+   "reqd": 1
+  },
+  {
+   "description": "The params this Skill was called with",
+   "fieldname": "inputs",
+   "fieldtype": "JSON",
+   "label": "Inputs"
+  },
+  {
+   "description": "List of {claim, confidence, supporting_evidence_ids}",
+   "fieldname": "findings",
+   "fieldtype": "JSON",
+   "label": "Findings"
+  },
+  {
+   "fieldname": "metrics",
+   "fieldtype": "JSON",
+   "label": "Metrics"
+  },
+  {
+   "description": "List of {id, source_tool, query_meta, records, summary}",
+   "fieldname": "evidence",
+   "fieldtype": "JSON",
+   "label": "Evidence"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ERPNext AI Business Analyst",
+ "name": "AI Investigation Step",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

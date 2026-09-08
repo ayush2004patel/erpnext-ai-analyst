@@ -21,6 +21,20 @@ app_license = "mit"
 # 	}
 # ]
 
+ai_analyst_tools = [
+    "erpnext_ai_business_analyst.tools.inventory.reorder.TOOL",
+    "erpnext_ai_business_analyst.tools.inventory.item_movement.TOOL",
+]
+
+ai_analyst_skills = [
+    "erpnext_ai_business_analyst.skills.inventory.reorder_demand.SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.stockout_risk.SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.dead_stock.SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.slow_moving_stock.SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.overstock.SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.inventory_concentration.SKILL",
+]
+
 # Includes in <head>
 # ------------------
 

@@ -1,0 +1,110 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-09-08 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "question",
+  "user",
+  "timestamp",
+  "status",
+  "hop_count",
+  "column_break_1",
+  "metrics",
+  "decision_errors",
+  "final_answer",
+  "steps"
+ ],
+ "fields": [
+  {
+   "fieldname": "question",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Question",
+   "reqd": 1
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "default": "now",
+   "fieldname": "timestamp",
+   "fieldtype": "Datetime",
+   "label": "Timestamp",
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "ok\ntruncated\nno_skill_matched",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "hop_count",
+   "fieldtype": "Int",
+   "label": "Hop Count"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Per-skill metrics dict, keyed by skill_name",
+   "fieldname": "metrics",
+   "fieldtype": "JSON",
+   "label": "Metrics"
+  },
+  {
+   "description": "Non-empty if the LLM ever returned an invalid RUN/CONCLUDE decision during this investigation",
+   "fieldname": "decision_errors",
+   "fieldtype": "JSON",
+   "label": "Decision Errors"
+  },
+  {
+   "description": "Reserved for the final-answer synthesis step (not yet wired)",
+   "fieldname": "final_answer",
+   "fieldtype": "Long Text",
+   "label": "Final Answer"
+  },
+  {
+   "fieldname": "steps",
+   "fieldtype": "Table",
+   "label": "Steps",
+   "options": "AI Investigation Step"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ERPNext AI Business Analyst",
+ "name": "AI Investigation Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
