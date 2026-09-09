@@ -6,7 +6,7 @@ key, no external dependency beyond `requests` (already present in any
 Frappe environment). Model and host are configurable via site_config.json,
 both with sensible defaults if unset:
 
-    bench --site business-analyst set-config ollama_model "llama3.1"
+    bench --site business-analyst set-config ollama_model "qwen2.5:3b-instruct"
     bench --site business-analyst set-config ollama_host "http://localhost:11434"
 
 Adding a second provider (Groq, Anthropic, etc.) later means writing
@@ -22,9 +22,9 @@ import requests
 
 from erpnext_ai_business_analyst.agent.llm.base import LLMClient
 
-DEFAULT_MODEL = "llama3.1"
+DEFAULT_MODEL = "qwen2.5:3b-instruct"
 DEFAULT_HOST = "http://localhost:11434"
-DEFAULT_TIMEOUT_SECONDS = 60
+DEFAULT_TIMEOUT_SECONDS = 180
 
 
 class OllamaClient(LLMClient):
