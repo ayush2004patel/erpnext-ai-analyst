@@ -3,15 +3,24 @@ Investigation Agent / Planner.
 
 Step 9: the classifier and the "follow the first suggestion" rule from
 Step 8 are replaced by a single LLM decision point (see agent/decision.py)
-— used BOTH to pick the starting Skill (hop 0, candidates = full registry)
-AND to decide RUN-vs-CONCLUDE on every subsequent hop (candidates = the
-previous Skill's suggested_next_skills). The loop shape, state, and
-evidence-merging (_merge_history) are unchanged from Step 8.
+— used BOTH to pick the starting Skill (hop 0) AND to decide RUN-vs-
+CONCLUDE on every subsequent hop (candidates = the previous Skill's
+suggested_next_skills). The loop shape, state, and evidence-merging
+(_merge_history) are unchanged from Step 8.
 
-No Anthropic-specific code here — only the LLMClient interface. Anthropic
-is one implementation (agent/llm/anthropic_client.py); a fake is used in
-tests (tests/llm_fakes.py) to keep the loop deterministically testable
-without real API calls.
+Root Cause B fix: hop-0 candidates default to the full registry (original
+behavior, used by every existing test), but if an EmbeddingClient is
+supplied, candidates are narrowed to the top_k most semantically similar
+Skills first (agent/retrieval.py) — this is what lets naturally-phrased
+questions route correctly instead of only questions echoing a Skill's
+exact trigger words. Purely additive: omitting embedding_client reproduces
+today's behavior exactly.
+
+No Anthropic-specific code here — only the LLMClient/EmbeddingClient
+interfaces. Anthropic is one LLMClient implementation
+(agent/llm/anthropic_client.py); fakes are used in tests
+(tests/llm_fakes.py) to keep the loop deterministically testable without
+real API calls.
 
 Fail-safe: an invalid/unparseable LLM response never gets executed. It's
 recorded in InvestigationResult.decision_errors and the investigation
@@ -29,11 +38,14 @@ from erpnext_ai_business_analyst.agent.decision import (
     parse_decision,
 )
 from erpnext_ai_business_analyst.agent.llm.base import LLMClient
+from erpnext_ai_business_analyst.agent.llm.embedding_client import EmbeddingClient
+from erpnext_ai_business_analyst.agent.retrieval import rank_skills_by_similarity
 from erpnext_ai_business_analyst.skills.base import Evidence, Finding, NextSkillSuggestion, SkillResult
 from erpnext_ai_business_analyst.skills.registry import SkillRegistry
 from erpnext_ai_business_analyst.tools.registry import ToolRegistry
 
 DEFAULT_MAX_HOPS = 4
+DEFAULT_TOP_K = 4
 
 
 @dataclass
@@ -53,6 +65,11 @@ class InvestigationResult:
     hop_count: int = 0
     decision_errors: list[str] = field(default_factory=list)  # non-empty if the LLM ever
                                                                  # returned an invalid decision
+    category: str | None = None                     # only set when the investigation concluded
+                                                      # at the FIRST decision with no Skill run:
+                                                      # "conversational" | "no_matching_skill".
+                                                      # None whenever any Skill ran, or the first
+                                                      # decision itself failed validation.
 
 
 def _filter_to_allowed_params(inputs: dict, allowed_param_names: set[str]) -> dict:
@@ -62,7 +79,8 @@ def _filter_to_allowed_params(inputs: dict, allowed_param_names: set[str]) -> di
 
 
 def _merge_history(
-    history: list[InvestigationStep], truncated: bool, decision_errors: list[str] | None = None
+    history: list[InvestigationStep], truncated: bool, decision_errors: list[str] | None = None,
+    category: str | None = None,
 ) -> InvestigationResult:
     all_findings: list[Finding] = []
     all_evidence: list[Evidence] = []
@@ -101,6 +119,7 @@ def _merge_history(
         history=history,
         hop_count=len(history),
         decision_errors=decision_errors or [],
+        category=category,
     )
 
 
@@ -111,15 +130,24 @@ def run_investigation(
     llm_client: LLMClient,
     initial_inputs: dict | None = None,
     max_hops: int = DEFAULT_MAX_HOPS,
+    embedding_client: EmbeddingClient | None = None,
+    top_k: int = DEFAULT_TOP_K,
 ) -> InvestigationResult:
     initial_inputs = initial_inputs or {}
     history: list[InvestigationStep] = []
     visited: set[str] = set()
     decision_errors: list[str] = []
 
-    # Hop 0: candidates = the full registry (this is the "classifier" role).
-    # Subsequent hops: candidates = the previous result's suggested_next_skills.
-    candidates = skill_registry.all()
+    # Hop 0: candidates = the full registry, narrowed to the top_k most
+    # semantically similar Skills when embedding_client is supplied (Root
+    # Cause B fix). Without it, behavior is identical to before this change.
+    # Subsequent hops: candidates = the previous result's suggested_next_skills
+    # — retrieval never applies there; real findings already disambiguate it.
+    all_skills = skill_registry.all()
+    if embedding_client is not None:
+        candidates = rank_skills_by_similarity(question, all_skills, embedding_client, top_k)
+    else:
+        candidates = all_skills
     suggestion_by_name: dict[str, NextSkillSuggestion] = {}
     current_inputs = dict(initial_inputs)
 
@@ -128,18 +156,26 @@ def run_investigation(
         if not available:
             return _merge_history(history, truncated=False, decision_errors=decision_errors)
 
-        system_prompt, user_prompt = build_decision_prompt(question, history, available)
+        is_first_decision = len(history) == 0
+        system_prompt, user_prompt = build_decision_prompt(
+            question, history, available, is_first_decision
+        )
         valid_names = {s.name for s in available}
 
         try:
             raw = llm_client.complete(system_prompt, user_prompt)
-            decision: Decision = parse_decision(raw, valid_names)
+            decision: Decision = parse_decision(raw, valid_names, is_first_decision)
         except InvalidDecisionError as e:
             decision_errors.append(str(e))
             return _merge_history(history, truncated=False, decision_errors=decision_errors)
 
         if decision.action == "CONCLUDE":
-            return _merge_history(history, truncated=False, decision_errors=decision_errors)
+            # decision.category is None except for a first-decision CONCLUDE
+            # (parse_decision enforces this) — mid-chain CONCLUDE stays unqualified.
+            return _merge_history(
+                history, truncated=False, decision_errors=decision_errors,
+                category=decision.category,
+            )
 
         skill = skill_registry.get_skill(decision.skill_name)
         suggestion = suggestion_by_name.get(decision.skill_name)

@@ -30,43 +30,40 @@ Target: first complete, usable product. Read-only. Single domain (Inventory) onl
 
 ## 3. Build Sequence
 
-| Step | Deliverable | Depends On | Notes |
-|---|---|---|---|
-| 1 | Shared inventory Tools | ERPNext instance | Stock Ledger, Item Reorder, Pending PR/STR/PO/DWO, Item Movement — build once, reused by all 6 skills |
-| 2 | Tool tests | Step 1 | Incl. automated "no side effects" lint scan |
-| 3 | `reorder_demand.py` Skill | Step 1 | Reuses existing Reorder Level Report logic — lowest risk, do first |
-| 4 | `stockout_risk.py` Skill | Step 1, 3 | Shares tools with Reorder/Demand — first real chain (`suggested_next_skills`) |
-| 5 | `dead_stock.py` + `slow_moving_stock.py` Skills | Step 1 | Same tool family: last-movement-date queries — build together |
-| 6 | `overstock.py` + `inventory_concentration.py` Skills | Step 1 | Same tool family: stock value/qty distribution — **Concentration metric must be pinned down before coding** (see §5) |
-| 7 | Skill unit tests | Steps 3–6 | Call `.run()` directly, no planner, against known cases |
-| 8 | Planner loop — hardcoded keyword router | Steps 3–6 | e.g. "stockout"→Stockout Risk, "reorder"→Reorder/Demand — validates hop/chain/conclude mechanics before LLM cost |
-| 9 | Swap in LLM classifier + LLM RUN/CONCLUDE decision | Step 8 | Real planner behavior |
-| 10 | `AI Investigation Log` / `AI Investigation Step` DocTypes | — | Can be built in parallel with steps 3–9 |
-| 11 | Wire Log persistence into planner loop | Steps 9, 10 | Written incrementally, not after the fact |
-| 12 | Chat UI (desk page) | Step 11 | Table rendering first, evidence expandable sections — **no charts yet** |
-| 13 | MCP server exposing Tools | Step 2 (stable tools) | Last — additive, orthogonal to core loop |
+| Step | Deliverable | Status |
+|---|---|---|
+| 1 | Shared inventory Tools | ✅ Done |
+| 2 | Tool tests | ✅ Done |
+| 3 | `reorder_demand.py` Skill | ✅ Done |
+| 4 | `stockout_risk.py` Skill | ✅ Done |
+| 5 | `dead_stock.py` + `slow_moving_stock.py` Skills | ✅ Done |
+| 6 | `overstock.py` + `inventory_concentration.py` Skills | ✅ Done |
+| 7 | Skill unit tests | ✅ Done (built alongside each Skill, not as a separate pass) |
+| 8 | Planner loop — hardcoded keyword router | ✅ Done, then retired — superseded by Step 9's LLM decisions |
+| 9 | LLM classifier + LLM RUN/CONCLUDE decision | ✅ Done — Ollama-first (`qwen2.5:3b-instruct` confirmed working; `qwen2.5-coder:7b` OOM'd on dev machine, `qwen2.5-coder:1.5b` made wrong decisions despite a clear prompt) |
+| 10 | `AI Investigation Log` / `AI Investigation Step` DocTypes | ✅ Done |
+| 11 | Wire Log persistence into planner loop | ✅ Done — `agent/persistence.py` + `agent/service.py` |
+| 12 | Chat UI | ✅ Done — Desk Page (`ai-analyst-chat`), table + expandable evidence, no charts. **Known open issue:** natural-language questions that don't closely match a Skill's `triggers` wording return no findings even when a relevant Skill exists — being investigated next, tracked outside this plan |
+| 13 | MCP server exposing Tools | Not started — last, per original sequencing |
 
 ---
 
 ## 4. Known Risks
 
-| Risk | Mitigation |
+| Risk | Status |
 |---|---|
-| Classifier accuracy is untested across domains (V1 = inventory only) | Explicitly flagged — real validation happens in V2, not before |
-| Bad Tool output poisons every downstream Skill | Step 2 tests run before any Skill is built |
-| `Inventory Concentration` metric is under-specified | Must be pinned down at Step 6, not deferred further |
-| LLM cost/latency in planner loop | `max_hops = 4` hard cap; findings-only (not raw evidence) sent to planner LLM |
+| Classifier accuracy is untested across domains (V1 = inventory only) | Still applies — real test comes in V2 |
+| Bad Tool output poisons every downstream Skill | Mitigated — Step 2 tests run before any Skill was built |
+| `Inventory Concentration` metric was under-specified | **Resolved** — defined as warehouse concentration by quantity (§5 below, kept for history) |
+| LLM cost/latency in planner loop | Mitigated — `max_hops` cap; findings-only (not raw evidence) sent to planner LLM. N/A for cost with Ollama (local, free) |
+| Natural-language question routing misses relevant Skills | **New, open** — real questions phrased differently from a Skill's `triggers` list can fail to match; next work item |
 
 ---
 
-## 5. Open Decision — Inventory Concentration
+## 5. Resolved Decision — Inventory Concentration (kept for history)
 
-Must be answered before Step 6:
-
-| Question | Options |
-|---|---|
-| Concentration of what? | By Warehouse? By Item Group? By single-supplier dependency? |
-| Metric | e.g. "X% of stock value sits in 1 warehouse" |
+Defined as warehouse concentration **by quantity**, not value, not supplier dependency:
+`concentration_pct = (max_warehouse_stock / total_stock) * 100`, only for items held in 2+ warehouses, flagged at `>= 80%` (configurable). Implemented in `skills/inventory/inventory_concentration.py`.
 
 ---
 
@@ -74,9 +71,9 @@ Must be answered before Step 6:
 
 | Checklist |
 |---|
-| ☐ All 6 Skills return structured `SkillResult` matching contract |
-| ☐ Planner answers all 4 example questions from §2 correctly |
-| ☐ Every finding traceable to Evidence with real `query_meta` |
-| ☐ Chat UI usable end-to-end on `business-analyst` site |
-| ☐ MCP server exposes all inventory Tools to an external client |
-| ☐ No write operations anywhere in Tools or Skills |
+| ✅ All 6 Skills return structured `SkillResult` matching contract |
+| ⚠️ Planner answers all 4 example questions from §2 — works when phrased close to a Skill's `triggers`; **not yet reliable for naturally-phrased questions** (open issue, see §4) |
+| ✅ Every finding traceable to Evidence with real `query_meta` |
+| ✅ Chat UI usable end-to-end on `business-analyst` site |
+| ❌ MCP server exposes all inventory Tools to an external client — not started (Step 13) |
+| ✅ No write operations anywhere in Tools or Skills |
