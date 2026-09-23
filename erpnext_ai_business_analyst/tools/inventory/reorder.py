@@ -25,7 +25,6 @@ from erpnext_ai_business_analyst.tools.base import (
 )
 
 REQUIRED_READ_DOCTYPES = [
-    "Item Reorder",
     "Item",
     "Stock Ledger Entry",
     "Material Request",

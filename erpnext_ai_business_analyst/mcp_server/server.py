@@ -101,7 +101,6 @@ def build_lowlevel_server(tool_registry: ToolRegistry) -> Server:
 
         return types.CallToolResult(
             content=[types.TextContent(type="text", text=json.dumps(response, default=str))],
-            structured_content=None if is_error else response,
             is_error=is_error,
         )
 

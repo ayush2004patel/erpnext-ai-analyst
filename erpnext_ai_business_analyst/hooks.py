@@ -24,6 +24,7 @@ app_license = "mit"
 ai_analyst_tools = [
     "erpnext_ai_business_analyst.tools.inventory.reorder.TOOL",
     "erpnext_ai_business_analyst.tools.inventory.item_movement.TOOL",
+    "erpnext_ai_business_analyst.tools.inventory.stock_balance.TOOL",
 ]
 
 ai_analyst_skills = [
@@ -33,6 +34,13 @@ ai_analyst_skills = [
     "erpnext_ai_business_analyst.skills.inventory.slow_moving_stock.SKILL",
     "erpnext_ai_business_analyst.skills.inventory.overstock.SKILL",
     "erpnext_ai_business_analyst.skills.inventory.inventory_concentration.SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.stock_control.SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.stock_control.AVAILABLE_STOCK_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.stock_control.NEGATIVE_STOCK_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.stock_control.VALUATION_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.stock_control.WAREHOUSE_IMBALANCE_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.stock_control.COVERAGE_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.stock_control.FAST_MOVING_SKILL",
 ]
 
 # Includes in <head>
@@ -275,4 +283,3 @@ ai_analyst_skills = [
 # ------------
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
-
