@@ -50,6 +50,11 @@ Full design rationale, contracts, and decisions: [`docs/ARCHITECTURE.md`](docs/A
 | Warehouse Imbalance | "Which items should we consider transferring between warehouses?" |
 | Stock Coverage | "How many days will the current stock last?" |
 | Fast-Moving Stock | "Which items have high recent consumption?" |
+| Open Purchase Orders | "Which purchase orders will supply inventory?" |
+| Sales Commitments | "What outstanding sales orders need stock?" |
+| Expiring Batches | "Which batches will expire soon?" |
+| Reorder Configuration Gaps | "Which stocked items have no reorder level?" |
+| Stock Movement Summary | "What stock was received and issued recently?" |
 
 Skills chain automatically when relevant — e.g. Dead Stock findings can trigger an Overstock follow-up, Overstock can trigger a Slow-Moving check.
 

@@ -25,6 +25,8 @@ ai_analyst_tools = [
     "erpnext_ai_business_analyst.tools.inventory.reorder.TOOL",
     "erpnext_ai_business_analyst.tools.inventory.item_movement.TOOL",
     "erpnext_ai_business_analyst.tools.inventory.stock_balance.TOOL",
+    "erpnext_ai_business_analyst.tools.inventory.order_commitments.TOOL",
+    "erpnext_ai_business_analyst.tools.inventory.batch_expiry.TOOL",
 ]
 
 ai_analyst_skills = [
@@ -41,6 +43,11 @@ ai_analyst_skills = [
     "erpnext_ai_business_analyst.skills.inventory.stock_control.WAREHOUSE_IMBALANCE_SKILL",
     "erpnext_ai_business_analyst.skills.inventory.stock_control.COVERAGE_SKILL",
     "erpnext_ai_business_analyst.skills.inventory.stock_control.FAST_MOVING_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.inventory_operations.OPEN_PURCHASE_ORDERS_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.inventory_operations.SALES_COMMITMENTS_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.inventory_operations.EXPIRING_BATCHES_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.inventory_operations.REORDER_GAP_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.inventory_operations.MOVEMENT_SUMMARY_SKILL",
 ]
 
 # Includes in <head>
