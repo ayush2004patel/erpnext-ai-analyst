@@ -1,0 +1,17 @@
+{
+ "content": null,
+ "creation": "2026-10-05 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2026-10-05 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ERPNext AI Business Analyst",
+ "name": "ai-inventory-dashboard",
+ "owner": "Administrator",
+ "page_name": "ai-inventory-dashboard",
+ "roles": [{"role": "System Manager"}],
+ "standard": "Yes",
+ "system_page": 0,
+ "title": "Inventory Health Dashboard"
+}

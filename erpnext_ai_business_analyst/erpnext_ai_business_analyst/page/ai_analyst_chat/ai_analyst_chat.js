@@ -149,6 +149,31 @@ class AIAnalystChat {
 		};
 	}
 
+	no_data_message(steps) {
+		const skill_name = steps[steps.length - 1]?.skill_name;
+		const messages = {
+			'inventory.reorder_demand': 'No items currently need a reorder. I checked configured reorder levels against stock and incoming supply.',
+			'inventory.stockout_risk': 'No items are currently below their configured reorder level.',
+			'inventory.dead_stock': 'No stocked items matched the selected inactive-stock period.',
+			'inventory.slow_moving_stock': 'No items have stock coverage above the selected slow-moving threshold.',
+			'inventory.overstock': 'No items have stock above the selected overstock threshold.',
+			'inventory.inventory_concentration': 'No multi-warehouse item has stock concentrated above the selected threshold.',
+			'inventory.stock_balance': 'No stock balance records matched the selected filters.',
+			'inventory.available_stock': 'No available-stock records matched the selected filters.',
+			'inventory.negative_stock': 'Good news: no item has negative stock in the checked records.',
+			'inventory.inventory_valuation': 'No valued stock records matched the selected filters.',
+			'inventory.warehouse_imbalance': 'No item needs a warehouse-transfer review based on the selected threshold.',
+			'inventory.stock_coverage': 'There is not enough recent consumption data to calculate stock coverage.',
+			'inventory.fast_moving_stock': 'No item met the selected fast-moving threshold in the checked period.',
+			'inventory.open_purchase_orders': 'No submitted purchase orders have outstanding quantities to receive.',
+			'inventory.sales_commitments': 'No submitted sales orders have outstanding quantities to deliver.',
+			'inventory.expiring_batches': 'No active batches expire within the selected period.',
+			'inventory.reorder_configuration_gap': 'All stocked items in the checked records have a reorder level configured.',
+			'inventory.stock_movement_summary': 'No stock movement records matched the selected period and filters.',
+		};
+		return messages[skill_name] || 'No matching inventory records were found for this question.';
+	}
+
 	add_answer(data) {
 		let html = `<div class="ai-analyst-answer"><div class="ai-analyst-answer-card">`;
 
@@ -189,24 +214,22 @@ class AIAnalystChat {
 				html += `</div>`;
 			}
 		} else if (ranAnySkill) {
-			// A Skill ran and genuinely found nothing — distinct from never
-			// having run one at all.
-			html += `<div class="text-muted">Checked — no issues found for that question.</div>`;
+			html += `<div class="text-muted">${this.no_data_message(data.steps)}</div>`;
 		} else if (data.category === 'conversational') {
 			html += `<div class="text-muted">I'm a focused inventory analyst, not a general
-				assistant. Ask me about reorder levels, stockout risk, dead stock, slow-moving
-				stock, overstock, or inventory concentration.</div>`;
+				assistant. Ask me about stock levels, reorder needs, stockout risk, movement,
+				valuation, batch expiry, purchase orders, sales commitments, or inventory health.</div>`;
 		} else if (data.category === 'no_matching_skill') {
 			html += `<div class="text-muted">That looks like a real business question, but it's
-				outside what I can analyze right now. I currently support: reorder/demand,
-				stockout risk, dead stock, slow-moving stock, overstock, and inventory
-				concentration.</div>`;
+				outside what I can analyze right now. I currently support stock levels, demand,
+				stockout risk, movement, valuation, expiry, purchase orders, sales commitments,
+				and inventory health.</div>`;
 		} else {
 			// category missing/unrecognized — e.g. the planner hit a
 			// decision_errors fail-safe before ever reaching a valid CONCLUDE.
 			html += `<div class="text-muted">I wasn't able to process that question. Try
-				rephrasing it, or ask about reorder levels, stockout risk, dead stock,
-				slow-moving stock, overstock, or inventory concentration.</div>`;
+				rephrasing it, or ask about stock levels, reorder needs, stockout risk,
+				movement, valuation, expiry, purchase orders, or sales commitments.</div>`;
 		}
 
 		if (data.decision_errors && data.decision_errors.length) {

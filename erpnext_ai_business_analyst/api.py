@@ -63,3 +63,30 @@ def ask_question(question: str) -> dict:
         "decision_errors": result.decision_errors,
         "log_name": log_name,
     }
+
+
+@frappe.whitelist()
+def get_inventory_health_summary() -> dict:
+    """Return the highest-priority inventory exceptions without using the LLM."""
+    tool_registry = ToolRegistry.get()
+    skill_registry = SkillRegistry.get()
+    cards = [
+        ("inventory.stockout_risk", "Stockout risk", "danger"),
+        ("inventory.dead_stock", "Dead stock", "warning"),
+        ("inventory.overstock", "Overstock", "warning"),
+        ("inventory.expiring_batches", "Expiring batches", "danger"),
+        ("inventory.negative_stock", "Negative stock", "danger"),
+    ]
+    summary = []
+    for skill_name, label, tone in cards:
+        result = skill_registry.get_skill(skill_name).run(tool_registry)
+        summary.append({
+            "skill_name": skill_name,
+            "label": label,
+            "tone": tone,
+            "status": result.status.value,
+            "count": len(result.findings),
+            "examples": [finding.claim for finding in result.findings[:3]],
+            "error": result.error,
+        })
+    return {"cards": summary}
