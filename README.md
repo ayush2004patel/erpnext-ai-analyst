@@ -55,8 +55,17 @@ Full design rationale, contracts, and decisions: [`docs/ARCHITECTURE.md`](docs/A
 | Expiring Batches | "Which batches will expire soon?" |
 | Reorder Configuration Gaps | "Which stocked items have no reorder level?" |
 | Stock Movement Summary | "What stock was received and issued recently?" |
+| ABC/XYZ Classification | "Which high-value items have unpredictable demand?" |
+| Ageing Stock Value | "How much money is tied up in old inventory?" |
+| Inventory Turnover | "Which items have low inventory turnover?" |
+| Overdue Purchase Orders | "Which purchase orders are overdue?" |
+| Supplier Delivery Risk | "Which suppliers deliver late?" |
+| Purchase-Delay Stockout Risk | "Which delayed purchase orders may cause a stockout?" |
+| Demand Forecast vs Actual | "Which items consumed more or less than forecast?" |
 
 Skills chain automatically when relevant — e.g. Dead Stock findings can trigger an Overstock follow-up, Overstock can trigger a Slow-Moving check.
+
+The app also includes an **Inventory Health Dashboard** at `/app/ai-inventory-dashboard` for a quick view of stockout risk, dead stock, overstock, expiring batches, and negative stock.
 
 Every investigation is asked in **your own words**, not exact keyword matches — semantic retrieval (local embeddings, no external API) ranks candidate Skills by meaning before the LLM ever sees them. Questions outside V1's scope get an honest answer explaining what's not covered yet, not a silent wrong answer.
 
