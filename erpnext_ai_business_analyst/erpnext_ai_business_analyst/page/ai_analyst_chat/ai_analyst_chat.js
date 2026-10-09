@@ -147,6 +147,7 @@ class AIAnalystChat {
 			'inventory.overdue_purchase_orders': 'Overdue purchase orders',
 			'inventory.supplier_delivery_risk': 'Supplier delivery risk',
 			'inventory.purchase_delay_stockout_risk': 'Purchase-delay stockout risk',
+			'inventory.demand_forecast_vs_actual': 'Demand forecast vs actual',
 		};
 		return {
 			title: labels[skill_name] || 'Inventory finding',
@@ -182,6 +183,7 @@ class AIAnalystChat {
 			'inventory.overdue_purchase_orders': 'No open purchase orders are past their scheduled delivery date.',
 			'inventory.supplier_delivery_risk': 'No supplier has a positive average delivery delay in the available delivery history.',
 			'inventory.purchase_delay_stockout_risk': 'No overdue purchase order is currently needed to reach a configured reorder level.',
+			'inventory.demand_forecast_vs_actual': 'No item differed from its demand forecast by the selected amount in the latest completed month.',
 		};
 		return messages[skill_name] || 'No matching inventory records were found for this question.';
 	}
