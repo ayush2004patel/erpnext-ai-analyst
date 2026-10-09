@@ -27,6 +27,7 @@ ai_analyst_tools = [
     "erpnext_ai_business_analyst.tools.inventory.stock_balance.TOOL",
     "erpnext_ai_business_analyst.tools.inventory.order_commitments.TOOL",
     "erpnext_ai_business_analyst.tools.inventory.batch_expiry.TOOL",
+    "erpnext_ai_business_analyst.tools.inventory.monthly_consumption.TOOL",
 ]
 
 ai_analyst_skills = [
@@ -48,6 +49,7 @@ ai_analyst_skills = [
     "erpnext_ai_business_analyst.skills.inventory.inventory_operations.EXPIRING_BATCHES_SKILL",
     "erpnext_ai_business_analyst.skills.inventory.inventory_operations.REORDER_GAP_SKILL",
     "erpnext_ai_business_analyst.skills.inventory.inventory_operations.MOVEMENT_SUMMARY_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.abc_xyz_classification.SKILL",
 ]
 
 # Includes in <head>

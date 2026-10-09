@@ -141,6 +141,7 @@ class AIAnalystChat {
 			'inventory.dead_stock': 'Dead stock',
 			'inventory.overstock': 'Overstock',
 			'inventory.slow_moving_stock': 'Slow-moving stock',
+			'inventory.abc_xyz_classification': 'ABC/XYZ classification',
 		};
 		return {
 			title: labels[skill_name] || 'Inventory finding',
@@ -170,6 +171,7 @@ class AIAnalystChat {
 			'inventory.expiring_batches': 'No active batches expire within the selected period.',
 			'inventory.reorder_configuration_gap': 'All stocked items in the checked records have a reorder level configured.',
 			'inventory.stock_movement_summary': 'No stock movement records matched the selected period and filters.',
+			'inventory.abc_xyz_classification': 'No stocked items with a positive inventory value were available to classify.',
 		};
 		return messages[skill_name] || 'No matching inventory records were found for this question.';
 	}
