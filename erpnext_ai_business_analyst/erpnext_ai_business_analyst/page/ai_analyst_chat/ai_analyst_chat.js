@@ -142,6 +142,8 @@ class AIAnalystChat {
 			'inventory.overstock': 'Overstock',
 			'inventory.slow_moving_stock': 'Slow-moving stock',
 			'inventory.abc_xyz_classification': 'ABC/XYZ classification',
+			'inventory.ageing_value': 'Ageing stock value',
+			'inventory.inventory_turnover': 'Low inventory turnover',
 		};
 		return {
 			title: labels[skill_name] || 'Inventory finding',
@@ -172,6 +174,8 @@ class AIAnalystChat {
 			'inventory.reorder_configuration_gap': 'All stocked items in the checked records have a reorder level configured.',
 			'inventory.stock_movement_summary': 'No stock movement records matched the selected period and filters.',
 			'inventory.abc_xyz_classification': 'No stocked items with a positive inventory value were available to classify.',
+			'inventory.ageing_value': 'No stocked items have been inactive for the selected ageing period.',
+			'inventory.inventory_turnover': 'No items met the selected low-turnover threshold in the checked period.',
 		};
 		return messages[skill_name] || 'No matching inventory records were found for this question.';
 	}

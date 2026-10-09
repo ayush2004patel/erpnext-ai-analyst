@@ -50,6 +50,8 @@ ai_analyst_skills = [
     "erpnext_ai_business_analyst.skills.inventory.inventory_operations.REORDER_GAP_SKILL",
     "erpnext_ai_business_analyst.skills.inventory.inventory_operations.MOVEMENT_SUMMARY_SKILL",
     "erpnext_ai_business_analyst.skills.inventory.abc_xyz_classification.SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.turnover_ageing.AGEING_VALUE_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.turnover_ageing.TURNOVER_SKILL",
 ]
 
 # Includes in <head>
