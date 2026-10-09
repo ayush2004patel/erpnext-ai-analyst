@@ -28,6 +28,7 @@ ai_analyst_tools = [
     "erpnext_ai_business_analyst.tools.inventory.order_commitments.TOOL",
     "erpnext_ai_business_analyst.tools.inventory.batch_expiry.TOOL",
     "erpnext_ai_business_analyst.tools.inventory.monthly_consumption.TOOL",
+    "erpnext_ai_business_analyst.tools.inventory.supplier_delivery.TOOL",
 ]
 
 ai_analyst_skills = [
@@ -52,6 +53,9 @@ ai_analyst_skills = [
     "erpnext_ai_business_analyst.skills.inventory.abc_xyz_classification.SKILL",
     "erpnext_ai_business_analyst.skills.inventory.turnover_ageing.AGEING_VALUE_SKILL",
     "erpnext_ai_business_analyst.skills.inventory.turnover_ageing.TURNOVER_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.supplier_risk.OVERDUE_PURCHASE_ORDERS_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.supplier_risk.SUPPLIER_DELIVERY_RISK_SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.supplier_risk.PURCHASE_DELAY_STOCKOUT_RISK_SKILL",
 ]
 
 # Includes in <head>

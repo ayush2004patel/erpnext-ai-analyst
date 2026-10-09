@@ -23,7 +23,7 @@ def _get_order_commitments(item_code: str | None = None, warehouse: str | None =
     filters = (" AND " + " AND ".join(conditions)) if conditions else ""
 
     purchase_rows = frappe.db.sql(f"""
-        SELECT 'purchase' AS commitment_type, po.name AS order_name, poi.item_code, i.item_name,
+        SELECT 'purchase' AS commitment_type, po.name AS order_name, po.supplier, poi.item_code, i.item_name,
             poi.warehouse, poi.schedule_date, (poi.qty - COALESCE(poi.received_qty, 0)) AS open_qty,
             poi.qty AS ordered_qty
         FROM `tabPurchase Order Item` poi
@@ -33,7 +33,7 @@ def _get_order_commitments(item_code: str | None = None, warehouse: str | None =
             AND (poi.qty - COALESCE(poi.received_qty, 0)) > 0{filters}
     """, values, as_dict=True)
     sales_rows = frappe.db.sql(f"""
-        SELECT 'sales' AS commitment_type, so.name AS order_name, soi.item_code, i.item_name,
+        SELECT 'sales' AS commitment_type, so.name AS order_name, NULL AS supplier, soi.item_code, i.item_name,
             soi.warehouse, soi.delivery_date AS schedule_date, (soi.qty - COALESCE(soi.delivered_qty, 0)) AS open_qty,
             soi.qty AS ordered_qty
         FROM `tabSales Order Item` soi

@@ -144,6 +144,9 @@ class AIAnalystChat {
 			'inventory.abc_xyz_classification': 'ABC/XYZ classification',
 			'inventory.ageing_value': 'Ageing stock value',
 			'inventory.inventory_turnover': 'Low inventory turnover',
+			'inventory.overdue_purchase_orders': 'Overdue purchase orders',
+			'inventory.supplier_delivery_risk': 'Supplier delivery risk',
+			'inventory.purchase_delay_stockout_risk': 'Purchase-delay stockout risk',
 		};
 		return {
 			title: labels[skill_name] || 'Inventory finding',
@@ -176,6 +179,9 @@ class AIAnalystChat {
 			'inventory.abc_xyz_classification': 'No stocked items with a positive inventory value were available to classify.',
 			'inventory.ageing_value': 'No stocked items have been inactive for the selected ageing period.',
 			'inventory.inventory_turnover': 'No items met the selected low-turnover threshold in the checked period.',
+			'inventory.overdue_purchase_orders': 'No open purchase orders are past their scheduled delivery date.',
+			'inventory.supplier_delivery_risk': 'No supplier has a positive average delivery delay in the available delivery history.',
+			'inventory.purchase_delay_stockout_risk': 'No overdue purchase order is currently needed to reach a configured reorder level.',
 		};
 		return messages[skill_name] || 'No matching inventory records were found for this question.';
 	}
