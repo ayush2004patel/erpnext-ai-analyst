@@ -34,6 +34,7 @@ class AIAnalystChat {
 					.ai-analyst-finding-title { margin-bottom: 4px; color: var(--heading-color, #1f2937); font-size: 14px; font-weight: 700; }
 					.ai-analyst-finding-summary { color: var(--text-color, #334155); }
 					.ai-analyst-finding-detail { margin-top: 5px; color: var(--text-muted, #64748b); font-size: 12px; }
+					.ai-analyst-finding-action { margin-top: 8px; color: #1f6f43; font-size: 12px; font-weight: 600; }
 					.ai-analyst-confidence { position: absolute; top: 12px; right: 12px; padding: 3px 8px !important; background: #e7f7ed; color: #227a45; border-radius: 999px; font-size: 12px; font-weight: 600; }
 					.ai-analyst-evidence-toggle { display: inline-block; margin-top: 13px; color: var(--primary, #2490ef); font-size: 13px; font-weight: 600; }
 					.ai-analyst-evidence { margin-top: 8px; padding: 12px; background: #f8fafc; border-radius: 8px; font-size: 12px; }
@@ -124,6 +125,7 @@ class AIAnalystChat {
 				title: 'Dead stock',
 				summary: `${escape(item_name)} has ${escape(quantity)} units at ${escape(warehouse)}.`,
 				detail: `No stock movement for ${escape(days)} days. Item code: ${escape(item_code)}.`,
+				action: 'Action: review disposal, discounting, or transfer options.',
 			};
 		}
 
@@ -134,10 +136,13 @@ class AIAnalystChat {
 				title: 'Overstock',
 				summary: `${escape(item_name)} has ${escape(quantity)} units at ${escape(warehouse)}.`,
 				detail: `${escape(multiple)}× above the recommended reorder level of ${escape(reorder_level)} units — ${escape(severity)}; ${escape(consumption)}. Item code: ${escape(item_code)}.`,
+				action: 'Action: pause replenishment and review the stock plan.',
 			};
 		}
 
 		const labels = {
+			'inventory.reorder_demand': 'Reorder needed',
+			'inventory.stockout_risk': 'Stockout risk',
 			'inventory.dead_stock': 'Dead stock',
 			'inventory.overstock': 'Overstock',
 			'inventory.slow_moving_stock': 'Slow-moving stock',
@@ -148,11 +153,65 @@ class AIAnalystChat {
 			'inventory.supplier_delivery_risk': 'Supplier delivery risk',
 			'inventory.purchase_delay_stockout_risk': 'Purchase-delay stockout risk',
 			'inventory.demand_forecast_vs_actual': 'Demand forecast vs actual',
+			'inventory.inventory_concentration': 'Warehouse concentration',
+			'inventory.stock_balance': 'Stock balance',
+			'inventory.available_stock': 'Available stock',
+			'inventory.negative_stock': 'Negative stock',
+			'inventory.inventory_valuation': 'Inventory value',
+			'inventory.warehouse_imbalance': 'Warehouse transfer opportunity',
+			'inventory.stock_coverage': 'Stock coverage',
+			'inventory.fast_moving_stock': 'Fast-moving stock',
+			'inventory.open_purchase_orders': 'Open purchase order',
+			'inventory.sales_commitments': 'Sales commitment',
+			'inventory.expiring_batches': 'Expiring batch',
+			'inventory.reorder_configuration_gap': 'Missing reorder setting',
+			'inventory.stock_movement_summary': 'Stock movement summary',
 		};
+		const actions = {
+			'inventory.reorder_demand': 'Action: raise or review a replenishment request.',
+			'inventory.stockout_risk': 'Action: expedite supply or transfer stock from another warehouse.',
+			'inventory.slow_moving_stock': 'Action: review demand, promotions, or future purchasing.',
+			'inventory.inventory_concentration': 'Action: review whether stock should be redistributed.',
+			'inventory.stock_balance': 'Action: use this as the current stock position.',
+			'inventory.available_stock': 'Action: use available quantity for sales or allocation decisions.',
+			'inventory.negative_stock': 'Action: investigate stock entries and reconcile the balance.',
+			'inventory.inventory_valuation': 'Action: review high-value stock for financial exposure.',
+			'inventory.warehouse_imbalance': 'Action: consider a warehouse transfer.',
+			'inventory.stock_coverage': 'Action: compare coverage with supplier lead time and reorder needs.',
+			'inventory.fast_moving_stock': 'Action: monitor replenishment closely to avoid stockouts.',
+			'inventory.open_purchase_orders': 'Action: track the expected receipt date with the supplier.',
+			'inventory.sales_commitments': 'Action: reserve or procure stock before the delivery date.',
+			'inventory.expiring_batches': 'Action: prioritize use, sale, or disposal before expiry.',
+			'inventory.reorder_configuration_gap': 'Action: set a reorder level for this stocked item.',
+			'inventory.stock_movement_summary': 'Action: use this movement trend for inventory planning.',
+			'inventory.abc_xyz_classification': 'Action: give A/Z items the closest planning control.',
+			'inventory.ageing_value': 'Action: reduce ageing stock to release tied-up value.',
+			'inventory.inventory_turnover': 'Action: review demand and future purchase quantities.',
+			'inventory.overdue_purchase_orders': 'Action: follow up with the supplier immediately.',
+			'inventory.supplier_delivery_risk': 'Action: review supplier lead time and alternatives.',
+			'inventory.purchase_delay_stockout_risk': 'Action: expedite the PO or arrange an alternate supply.',
+			'inventory.demand_forecast_vs_actual': 'Action: review the forecast and future replenishment plan.',
+		};
+		let summary = finding_text.replace(/\bROL\b/g, 'recommended reorder level');
+		let detail = '';
+		const item_at_warehouse = summary.match(/^(.+?) \((.+?)\) at (.+?):\s*(.+)$/);
+		if (item_at_warehouse) {
+			const [, item_code, item_name, warehouse, message] = item_at_warehouse;
+			summary = `${item_name} at ${warehouse}: ${message}`;
+			detail = `Item code: ${item_code}.`;
+		} else {
+			const item_only = summary.match(/^(.+?) \((.+?)\):\s*(.+)$/);
+			if (item_only) {
+				const [, item_code, item_name, message] = item_only;
+				summary = `${item_name}: ${message}`;
+				detail = `Item code: ${item_code}.`;
+			}
+		}
 		return {
 			title: labels[skill_name] || 'Inventory finding',
-			summary: escape(finding_text.replace(/\bROL\b/g, 'recommended reorder level')),
-			detail: '',
+			summary: escape(summary),
+			detail: escape(detail),
+			action: actions[skill_name] || 'Action: review this inventory finding.',
 		};
 	}
 
@@ -209,7 +268,8 @@ class AIAnalystChat {
 				html += `<tr>
 					<td><div class="ai-analyst-finding-title">${finding.title}</div>
 						<div class="ai-analyst-finding-summary">${finding.summary}</div>
-						${finding.detail ? `<div class="ai-analyst-finding-detail">${finding.detail}</div>` : ''}</td>
+						${finding.detail ? `<div class="ai-analyst-finding-detail">${finding.detail}</div>` : ''}
+						${finding.action ? `<div class="ai-analyst-finding-action">${finding.action}</div>` : ''}</td>
 					<td class="ai-analyst-confidence">${Math.round(f.confidence * 100)}%</td>
 				</tr>`;
 			});
