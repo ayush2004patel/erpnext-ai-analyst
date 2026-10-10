@@ -62,6 +62,7 @@ Full design rationale, contracts, and decisions: [`docs/ARCHITECTURE.md`](docs/A
 | Supplier Delivery Risk | "Which suppliers deliver late?" |
 | Purchase-Delay Stockout Risk | "Which delayed purchase orders may cause a stockout?" |
 | Demand Forecast vs Actual | "Which items consumed more or less than forecast?" |
+| Inventory Data Quality Audit | "Is my inventory data clean?" |
 
 Skills chain automatically when relevant — e.g. Dead Stock findings can trigger an Overstock follow-up, Overstock can trigger a Slow-Moving check.
 

@@ -57,6 +57,7 @@ ai_analyst_skills = [
     "erpnext_ai_business_analyst.skills.inventory.supplier_risk.SUPPLIER_DELIVERY_RISK_SKILL",
     "erpnext_ai_business_analyst.skills.inventory.supplier_risk.PURCHASE_DELAY_STOCKOUT_RISK_SKILL",
     "erpnext_ai_business_analyst.skills.inventory.demand_forecast.SKILL",
+    "erpnext_ai_business_analyst.skills.inventory.data_quality_audit.SKILL",
 ]
 
 # Includes in <head>

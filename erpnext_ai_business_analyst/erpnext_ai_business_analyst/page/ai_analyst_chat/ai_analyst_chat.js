@@ -153,6 +153,7 @@ class AIAnalystChat {
 			'inventory.supplier_delivery_risk': 'Supplier delivery risk',
 			'inventory.purchase_delay_stockout_risk': 'Purchase-delay stockout risk',
 			'inventory.demand_forecast_vs_actual': 'Demand forecast vs actual',
+			'inventory.data_quality_audit': 'Inventory data quality issue',
 			'inventory.inventory_concentration': 'Warehouse concentration',
 			'inventory.stock_balance': 'Stock balance',
 			'inventory.available_stock': 'Available stock',
@@ -191,6 +192,7 @@ class AIAnalystChat {
 			'inventory.supplier_delivery_risk': 'Action: review supplier lead time and alternatives.',
 			'inventory.purchase_delay_stockout_risk': 'Action: expedite the PO or arrange an alternate supply.',
 			'inventory.demand_forecast_vs_actual': 'Action: review the forecast and future replenishment plan.',
+			'inventory.data_quality_audit': 'Action: correct the inventory data or setup issue before relying on planning results.',
 		};
 		let summary = finding_text.replace(/\bROL\b/g, 'recommended reorder level');
 		let detail = '';
@@ -243,6 +245,7 @@ class AIAnalystChat {
 			'inventory.supplier_delivery_risk': 'No supplier has a positive average delivery delay in the available delivery history.',
 			'inventory.purchase_delay_stockout_risk': 'No overdue purchase order is currently needed to reach a configured reorder level.',
 			'inventory.demand_forecast_vs_actual': 'No item differed from its demand forecast by the selected amount in the latest completed month.',
+			'inventory.data_quality_audit': 'No common inventory data-quality issues were found in the checked records.',
 		};
 		return messages[skill_name] || 'No matching inventory records were found for this question.';
 	}
