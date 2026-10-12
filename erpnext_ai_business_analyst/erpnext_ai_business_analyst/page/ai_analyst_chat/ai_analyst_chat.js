@@ -34,7 +34,10 @@ class AIAnalystChat {
 					.ai-analyst-finding-title { margin-bottom: 4px; color: var(--heading-color, #1f2937); font-size: 14px; font-weight: 700; }
 					.ai-analyst-finding-summary { color: var(--text-color, #334155); }
 					.ai-analyst-finding-detail { margin-top: 5px; color: var(--text-muted, #64748b); font-size: 12px; }
+					.ai-analyst-finding-why { margin-top: 8px; color: #5b4a13; font-size: 12px; line-height: 1.45; }
 					.ai-analyst-finding-action { margin-top: 8px; color: #1f6f43; font-size: 12px; font-weight: 600; }
+					.ai-analyst-record-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 9px; font-size: 12px; }
+					.ai-analyst-record-links a { color: var(--primary, #2490ef); font-weight: 600; }
 					.ai-analyst-confidence { position: absolute; top: 12px; right: 12px; padding: 3px 8px !important; background: #e7f7ed; color: #227a45; border-radius: 999px; font-size: 12px; font-weight: 600; }
 					.ai-analyst-evidence-toggle { display: inline-block; margin-top: 13px; color: var(--primary, #2490ef); font-size: 13px; font-weight: 600; }
 					.ai-analyst-evidence { margin-top: 8px; padding: 12px; background: #f8fafc; border-radius: 8px; font-size: 12px; }
@@ -216,7 +219,10 @@ class AIAnalystChat {
 				title: 'Dead stock',
 				summary: `${escape(item_name)} has ${escape(quantity)} units at ${escape(warehouse)}.`,
 				detail: `No stock movement for ${escape(days)} days. Item code: ${escape(item_code)}.`,
+				why: 'Cash is tied up in stock that is not contributing to sales or production.',
 				action: 'Action: review disposal, discounting, or transfer options.',
+				item_code,
+				warehouse,
 			};
 		}
 
@@ -227,7 +233,10 @@ class AIAnalystChat {
 				title: 'Overstock',
 				summary: `${escape(item_name)} has ${escape(quantity)} units at ${escape(warehouse)}.`,
 				detail: `${escape(multiple)}× above the recommended reorder level of ${escape(reorder_level)} units — ${escape(severity)}; ${escape(consumption)}. Item code: ${escape(item_code)}.`,
+				why: 'Excess stock increases holding costs and the risk of future obsolescence.',
 				action: 'Action: pause replenishment and review the stock plan.',
+				item_code,
+				warehouse,
 			};
 		}
 
@@ -285,17 +294,46 @@ class AIAnalystChat {
 			'inventory.demand_forecast_vs_actual': 'Action: review the forecast and future replenishment plan.',
 			'inventory.data_quality_audit': 'Action: correct the inventory data or setup issue before relying on planning results.',
 		};
+		const why_matters = {
+			'inventory.reorder_demand': 'Without replenishment, demand may exceed the stock available to fulfil it.',
+			'inventory.stockout_risk': 'A stockout can delay customer deliveries or interrupt production.',
+			'inventory.slow_moving_stock': 'Slow-moving stock ties up cash and may become obsolete.',
+			'inventory.inventory_concentration': 'Uneven stock distribution can create shortages in one warehouse while another has excess.',
+			'inventory.negative_stock': 'Negative stock usually signals an inventory posting or process problem.',
+			'inventory.inventory_valuation': 'High-value stock represents material working-capital exposure.',
+			'inventory.warehouse_imbalance': 'A transfer may fulfil demand faster than waiting for a new purchase.',
+			'inventory.stock_coverage': 'Low coverage can become a stockout before the next supply arrives.',
+			'inventory.fast_moving_stock': 'Fast-moving items need closer replenishment monitoring.',
+			'inventory.open_purchase_orders': 'Incoming supply affects whether future demand can be fulfilled.',
+			'inventory.sales_commitments': 'Open customer demand must be covered before the promised delivery date.',
+			'inventory.expiring_batches': 'Expiry can turn usable inventory into a loss if it is not used or sold in time.',
+			'inventory.reorder_configuration_gap': 'Without a reorder setting, the system cannot reliably flag replenishment needs.',
+			'inventory.stock_movement_summary': 'Movement trends help identify demand changes before they affect availability.',
+			'inventory.abc_xyz_classification': 'High-value or unpredictable items need tighter planning control.',
+			'inventory.ageing_value': 'Ageing inventory locks up working capital and may need recovery action.',
+			'inventory.inventory_turnover': 'Low turnover indicates inventory is being held longer than expected.',
+			'inventory.overdue_purchase_orders': 'Late supply can create stockouts or delay customer commitments.',
+			'inventory.supplier_delivery_risk': 'Unreliable supplier delivery makes replenishment plans less dependable.',
+			'inventory.purchase_delay_stockout_risk': 'A late purchase order may directly cause an item to run out.',
+			'inventory.demand_forecast_vs_actual': 'A large forecast error can lead to excess stock or shortages.',
+			'inventory.data_quality_audit': 'Poor inventory data can make every planning recommendation unreliable.',
+		};
 		let summary = finding_text.replace(/\bROL\b/g, 'recommended reorder level');
 		let detail = '';
+		let item_code = '';
+		let warehouse = '';
 		const item_at_warehouse = summary.match(/^(.+?) \((.+?)\) at (.+?):\s*(.+)$/);
 		if (item_at_warehouse) {
-			const [, item_code, item_name, warehouse, message] = item_at_warehouse;
+			const [, parsed_item_code, item_name, parsed_warehouse, message] = item_at_warehouse;
+			item_code = parsed_item_code;
+			warehouse = parsed_warehouse;
 			summary = `${item_name} at ${warehouse}: ${message}`;
 			detail = `Item code: ${item_code}.`;
 		} else {
 			const item_only = summary.match(/^(.+?) \((.+?)\):\s*(.+)$/);
 			if (item_only) {
-				const [, item_code, item_name, message] = item_only;
+				const [, parsed_item_code, item_name, message] = item_only;
+				item_code = parsed_item_code;
 				summary = `${item_name}: ${message}`;
 				detail = `Item code: ${item_code}.`;
 			}
@@ -304,8 +342,18 @@ class AIAnalystChat {
 			title: labels[skill_name] || 'Inventory finding',
 			summary: escape(summary),
 			detail: escape(detail),
+			why: why_matters[skill_name] || 'This can affect inventory availability, cost, or service if it is not reviewed.',
 			action: actions[skill_name] || 'Action: review this inventory finding.',
+			item_code,
+			warehouse,
 		};
+	}
+
+	format_record_links(item_code, warehouse) {
+		const links = [];
+		if (item_code) links.push(`<a href="/app/item/${encodeURIComponent(item_code)}">Open item</a>`);
+		if (warehouse) links.push(`<a href="/app/warehouse/${encodeURIComponent(warehouse)}">Open warehouse</a>`);
+		return links.length ? `<div class="ai-analyst-record-links">${links.join('')}</div>` : '';
 	}
 
 	no_data_message(steps) {
@@ -351,6 +399,12 @@ class AIAnalystChat {
 		return text.length > 160 ? `${text.slice(0, 157)}...` : text;
 	}
 
+	format_report_cell(column, value) {
+		const text = frappe.utils.escape_html(this.format_report_value(value));
+		const route = column === 'item_code' || column === 'item' ? 'item' : (column === 'warehouse' ? 'warehouse' : '');
+		return route && value ? `<a href="/app/${route}/${encodeURIComponent(value)}">${text}</a>` : text;
+	}
+
 	format_report_table(records) {
 		const rows = records.filter((record) => record && typeof record === 'object' && !Array.isArray(record));
 		if (!rows.length) return '';
@@ -364,7 +418,7 @@ class AIAnalystChat {
 		rows.forEach((row) => {
 			html += '<tr>';
 			columns.forEach((column) => {
-				html += `<td>${escape(this.format_report_value(row[column]))}</td>`;
+				html += `<td>${this.format_report_cell(column, row[column])}</td>`;
 			});
 			html += '</tr>';
 		});
@@ -448,7 +502,9 @@ class AIAnalystChat {
 					<td><div class="ai-analyst-finding-title">${finding.title}</div>
 						<div class="ai-analyst-finding-summary">${finding.summary}</div>
 						${finding.detail ? `<div class="ai-analyst-finding-detail">${finding.detail}</div>` : ''}
-						${finding.action ? `<div class="ai-analyst-finding-action">${finding.action}</div>` : ''}</td>
+						${finding.why ? `<div class="ai-analyst-finding-why"><strong>Why this matters:</strong> ${frappe.utils.escape_html(finding.why)}</div>` : ''}
+						${finding.action ? `<div class="ai-analyst-finding-action">Recommended action: ${frappe.utils.escape_html(finding.action.replace(/^Action:\s*/, ''))}</div>` : ''}
+						${this.format_record_links(finding.item_code, finding.warehouse)}</td>
 					<td class="ai-analyst-confidence">${Math.round(f.confidence * 100)}%</td>
 				</tr>`;
 			});
