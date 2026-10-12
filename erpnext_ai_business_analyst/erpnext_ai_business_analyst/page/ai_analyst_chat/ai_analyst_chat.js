@@ -50,6 +50,13 @@ class AIAnalystChat {
 					.ai-analyst-suggestion-list { display: flex; flex-wrap: wrap; gap: 7px; }
 					.ai-analyst-suggestion { padding: 5px 9px; background: var(--card-bg, #fff); color: var(--primary, #2490ef); border: 1px solid #c9ddfb; border-radius: 999px; cursor: pointer; font-size: 12px; line-height: 1.35; text-align: left; }
 					.ai-analyst-suggestion:hover { background: #e8f1ff; border-color: var(--primary, #2490ef); }
+					.ai-analyst-history { margin-top: 12px; padding: 12px 14px; background: #f8fafc; border: 1px solid var(--border-color, #dfe5ec); border-radius: 10px; }
+					.ai-analyst-history-title { margin-bottom: 7px; color: var(--text-muted, #64748b); font-size: 12px; font-weight: 600; }
+					.ai-analyst-history-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid var(--border-color, #dfe5ec); }
+					.ai-analyst-history-item:first-of-type { border-top: 0; }
+					.ai-analyst-history-question { flex: 1; padding: 0; color: var(--text-color, #334155); background: transparent; border: 0; cursor: pointer; font-size: 12px; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+					.ai-analyst-history-question:hover { color: var(--primary, #2490ef); text-decoration: underline; }
+					.ai-analyst-history-log { flex: none; color: var(--primary, #2490ef); font-size: 11px; white-space: nowrap; }
 					.ai-analyst-report-evidence { margin-top: 12px; font-size: 12px; }
 					.ai-analyst-report-evidence summary { color: var(--primary, #2490ef); cursor: pointer; font-weight: 600; }
 					.ai-analyst-report-table-wrap { max-height: 300px; overflow: auto; margin-top: 8px; border: 1px solid var(--border-color, #dfe5ec); border-radius: 7px; }
@@ -98,6 +105,10 @@ class AIAnalystChat {
 						<button type="button" class="ai-analyst-suggestion" data-question="Which batches expire in 90 days?">Batches expiring soon</button>
 					</div>
 				</div>
+				<div class="ai-analyst-history" style="display: none;">
+					<div class="ai-analyst-history-title">Recent investigations</div>
+					<div class="ai-analyst-history-list"></div>
+				</div>
 			</div>
 		`).appendTo(this.page.main);
 
@@ -105,6 +116,8 @@ class AIAnalystChat {
 		this.$input = this.$container.find('.ai-analyst-question');
 		this.$button = this.$container.find('.ai-analyst-ask');
 		this.$reportDataset = this.$container.find('.ai-analyst-report-dataset');
+		this.$history = this.$container.find('.ai-analyst-history');
+		this.$historyList = this.$container.find('.ai-analyst-history-list');
 
 		this.$button.on('click', () => this.ask());
 		this.$input.on('keypress', (e) => {
@@ -112,6 +125,33 @@ class AIAnalystChat {
 		});
 		this.$container.find('.ai-analyst-suggestion').on('click', (e) => {
 			this.$input.val($(e.currentTarget).data('question')).focus();
+		});
+		this.load_recent_history();
+	}
+
+	load_recent_history() {
+		frappe.call({
+			method: 'erpnext_ai_business_analyst.api.get_recent_investigations',
+			args: { limit: 8 },
+			callback: (r) => {
+				const entries = r.message || [];
+				if (!entries.length) {
+					this.$history.hide();
+					return;
+				}
+				const escape = frappe.utils.escape_html;
+				this.$historyList.empty();
+				entries.forEach((entry) => {
+					const question = escape(entry.question || 'Untitled investigation');
+					const log_url = `/app/ai-investigation-log/${encodeURIComponent(entry.name)}`;
+					const $item = $(`<div class="ai-analyst-history-item"><button type="button" class="ai-analyst-history-question" title="${question}">${question}</button><a class="ai-analyst-history-log" href="${log_url}" target="_blank">View log</a></div>`);
+					$item.find('.ai-analyst-history-question').on('click', () => {
+						this.$input.val(entry.question).focus();
+					});
+					this.$historyList.append($item);
+				});
+				this.$history.show();
+			},
 		});
 	}
 
@@ -130,6 +170,7 @@ class AIAnalystChat {
 				this.$button.prop('disabled', false).text('Ask');
 				if (r.message) {
 					this.add_answer(r.message);
+					this.load_recent_history();
 				}
 			},
 			error: () => {

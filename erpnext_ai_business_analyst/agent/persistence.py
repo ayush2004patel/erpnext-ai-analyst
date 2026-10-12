@@ -38,6 +38,7 @@ def save_investigation_log(question: str, result: InvestigationResult) -> str:
     log = frappe.get_doc({
         "doctype": "AI Investigation Log",
         "question": question,
+        "user": frappe.session.user,
         "status": result.status,
         "hop_count": result.hop_count,
         "metrics": result.metrics,                                   # dict -> auto-encoded

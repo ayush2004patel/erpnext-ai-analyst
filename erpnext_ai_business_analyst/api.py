@@ -15,6 +15,7 @@ path learned the hard way in Step 10.
 from __future__ import annotations
 
 import frappe
+from frappe.utils import cint
 
 from erpnext_ai_business_analyst.agent.llm.ollama_client import OllamaClient
 from erpnext_ai_business_analyst.agent.llm.ollama_embedding_client import OllamaEmbeddingClient
@@ -106,6 +107,19 @@ def ask_question(question: str, report_dataset: str | None = None, report_filter
         "report_evidence_summary": report_answer.evidence_summary if report_answer else None,
         "report_records": report_answer.records if report_answer else [],
     }
+
+
+@frappe.whitelist()
+def get_recent_investigations(limit: int = 8) -> list[dict]:
+    """Return a small, privacy-scoped list of the current user's investigations."""
+    limit = max(1, min(cint(limit), 20))
+    return frappe.get_all(
+        "AI Investigation Log",
+        filters={"owner": frappe.session.user},
+        fields=["name", "question", "status", "timestamp"],
+        order_by="modified desc",
+        limit_page_length=limit,
+    )
 
 
 @frappe.whitelist()
