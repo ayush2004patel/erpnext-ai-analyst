@@ -48,6 +48,28 @@ DEFAULT_MAX_HOPS = 4
 DEFAULT_TOP_K = 4
 
 
+def _explicit_trigger_skill(question: str, skills: list) -> object | None:
+    """Prefer an unambiguous phrase explicitly named by the user.
+
+    Semantic similarity remains useful for natural language, but a precise
+    phrase such as "customer demand" must not be displaced by a supply-side
+    concept such as purchase orders. The longest trigger wins; tied phrases
+    deliberately fall back to semantic/LLM routing rather than guessing.
+    """
+    normalized_question = question.lower()
+    matches = []
+    for skill in skills:
+        lengths = [len(trigger) for trigger in skill.triggers if trigger.lower() in normalized_question]
+        if lengths:
+            matches.append((max(lengths), skill))
+    if not matches:
+        return None
+    matches.sort(key=lambda pair: pair[0], reverse=True)
+    if len(matches) > 1 and matches[0][0] == matches[1][0]:
+        return None
+    return matches[0][1]
+
+
 @dataclass
 class InvestigationStep:
     skill_name: str
@@ -144,7 +166,10 @@ def run_investigation(
     # Subsequent hops: candidates = the previous result's suggested_next_skills
     # — retrieval never applies there; real findings already disambiguate it.
     all_skills = skill_registry.all()
-    if embedding_client is not None:
+    explicit_skill = _explicit_trigger_skill(question, all_skills)
+    if explicit_skill is not None:
+        candidates = [explicit_skill]
+    elif embedding_client is not None:
         candidates = rank_skills_by_similarity(question, all_skills, embedding_client, top_k)
     else:
         candidates = all_skills
