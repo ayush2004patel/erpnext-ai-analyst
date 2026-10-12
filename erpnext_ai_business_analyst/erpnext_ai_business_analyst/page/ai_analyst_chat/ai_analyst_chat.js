@@ -48,7 +48,9 @@ class AIAnalystChat {
 					.ai-analyst-suggestion-list { display: flex; flex-wrap: wrap; gap: 7px; }
 					.ai-analyst-suggestion { padding: 5px 9px; background: var(--card-bg, #fff); color: var(--primary, #2490ef); border: 1px solid #c9ddfb; border-radius: 999px; cursor: pointer; font-size: 12px; line-height: 1.35; text-align: left; }
 					.ai-analyst-suggestion:hover { background: #e8f1ff; border-color: var(--primary, #2490ef); }
-					.ai-analyst-report-controls { display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); gap: 8px; margin-top: 9px; }
+					.ai-analyst-report-filter-toggle { margin-top: 10px; color: var(--text-muted, #64748b); font-size: 12px; }
+					.ai-analyst-report-filter-toggle summary { cursor: pointer; font-weight: 600; }
+					.ai-analyst-report-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 9px; }
 					.ai-analyst-report-controls .form-control { min-height: 34px; font-size: 12px; }
 					.ai-analyst-report-evidence { margin-top: 12px; font-size: 12px; }
 					.ai-analyst-report-evidence summary { color: var(--primary, #2490ef); cursor: pointer; font-weight: 600; }
@@ -73,12 +75,20 @@ class AIAnalystChat {
 						<button type="button" class="ai-analyst-suggestion" data-question="Which batches expire in 90 days?">Batches expiring soon</button>
 					</div>
 				</div>
-				<div class="ai-analyst-report-controls">
-					<select class="form-control ai-analyst-report-dataset"><option value="">Auto report selection</option><option value="stock_balance">Data View: Stock Balance</option><option value="stock_movement">Data View: Stock Movement</option><option value="order_commitments">Data View: Open Orders</option><option value="monthly_consumption">Data View: Monthly Consumption</option><option value="batch_expiry">Data View: Batch Expiry</option><option value="erpnext_stock_balance">ERPNext Report: Stock Balance</option><option value="erpnext_stock_ledger">ERPNext Report: Stock Ledger</option><option value="erpnext_stock_ageing">ERPNext Report: Stock Ageing</option><option value="erpnext_purchase_order_analysis">ERPNext Report: Purchase Order Analysis</option><option value="erpnext_sales_order_analysis">ERPNext Report: Sales Order Analysis</option></select>
-					<input type="text" class="form-control ai-analyst-report-warehouse" placeholder="Warehouse (optional)">
-					<input type="text" class="form-control ai-analyst-report-item" placeholder="Item code (optional)">
-					<input type="text" class="form-control ai-analyst-report-group" placeholder="Item group (optional)">
-				</div>
+				<details class="ai-analyst-report-filter-toggle">
+					<summary>Optional report filters</summary>
+					<div class="ai-analyst-report-controls">
+						<select class="form-control ai-analyst-report-dataset"><option value="">Auto report selection</option><option value="stock_balance">Data View: Stock Balance</option><option value="stock_movement">Data View: Stock Movement</option><option value="order_commitments">Data View: Open Orders</option><option value="monthly_consumption">Data View: Monthly Consumption</option><option value="batch_expiry">Data View: Batch Expiry</option><option value="erpnext_stock_balance">ERPNext Report: Stock Balance</option><option value="erpnext_stock_ledger">ERPNext Report: Stock Ledger</option><option value="erpnext_stock_ageing">ERPNext Report: Stock Ageing</option><option value="erpnext_purchase_order_analysis">ERPNext Report: Purchase Order Analysis</option><option value="erpnext_sales_order_analysis">ERPNext Report: Sales Order Analysis</option></select>
+						<input type="text" class="form-control ai-analyst-report-company" placeholder="Company (optional)">
+						<input type="date" class="form-control ai-analyst-report-from-date" aria-label="From date">
+						<input type="date" class="form-control ai-analyst-report-to-date" aria-label="To date">
+						<input type="text" class="form-control ai-analyst-report-warehouse" placeholder="Warehouse (optional)">
+						<input type="text" class="form-control ai-analyst-report-item" placeholder="Item code (optional)">
+						<input type="text" class="form-control ai-analyst-report-group" placeholder="Item group (optional)">
+						<input type="text" class="form-control ai-analyst-report-supplier" placeholder="Supplier (PO report)">
+						<input type="text" class="form-control ai-analyst-report-customer" placeholder="Customer (SO report)">
+					</div>
+				</details>
 			</div>
 		`).appendTo(this.page.main);
 
@@ -86,9 +96,14 @@ class AIAnalystChat {
 		this.$input = this.$container.find('.ai-analyst-question');
 		this.$button = this.$container.find('.ai-analyst-ask');
 		this.$reportDataset = this.$container.find('.ai-analyst-report-dataset');
+		this.$reportCompany = this.$container.find('.ai-analyst-report-company');
+		this.$reportFromDate = this.$container.find('.ai-analyst-report-from-date');
+		this.$reportToDate = this.$container.find('.ai-analyst-report-to-date');
 		this.$reportWarehouse = this.$container.find('.ai-analyst-report-warehouse');
 		this.$reportItem = this.$container.find('.ai-analyst-report-item');
 		this.$reportGroup = this.$container.find('.ai-analyst-report-group');
+		this.$reportSupplier = this.$container.find('.ai-analyst-report-supplier');
+		this.$reportCustomer = this.$container.find('.ai-analyst-report-customer');
 
 		this.$button.on('click', () => this.ask());
 		this.$input.on('keypress', (e) => {
@@ -109,7 +124,7 @@ class AIAnalystChat {
 
 		frappe.call({
 			method: 'erpnext_ai_business_analyst.api.ask_question',
-			args: { question, report_dataset: this.$reportDataset.val() || null, report_filters: { warehouse: this.$reportWarehouse.val().trim(), item_code: this.$reportItem.val().trim(), item_group: this.$reportGroup.val().trim() } },
+			args: { question, report_dataset: this.$reportDataset.val() || null, report_filters: { company: this.$reportCompany.val().trim(), from_date: this.$reportFromDate.val(), to_date: this.$reportToDate.val(), warehouse: this.$reportWarehouse.val().trim(), item_code: this.$reportItem.val().trim(), item_group: this.$reportGroup.val().trim(), supplier: this.$reportSupplier.val().trim(), customer: this.$reportCustomer.val().trim() } },
 			callback: (r) => {
 				this.$button.prop('disabled', false).text('Ask');
 				if (r.message) {
