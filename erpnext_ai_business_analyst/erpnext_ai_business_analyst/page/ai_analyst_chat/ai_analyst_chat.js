@@ -48,23 +48,20 @@ class AIAnalystChat {
 					.ai-analyst-suggestion-list { display: flex; flex-wrap: wrap; gap: 7px; }
 					.ai-analyst-suggestion { padding: 5px 9px; background: var(--card-bg, #fff); color: var(--primary, #2490ef); border: 1px solid #c9ddfb; border-radius: 999px; cursor: pointer; font-size: 12px; line-height: 1.35; text-align: left; }
 					.ai-analyst-suggestion:hover { background: #e8f1ff; border-color: var(--primary, #2490ef); }
-					.ai-analyst-report-filter-toggle { margin-top: 10px; color: var(--text-muted, #64748b); font-size: 12px; }
-					.ai-analyst-report-filter-toggle summary { cursor: pointer; font-weight: 600; }
-					.ai-analyst-report-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 9px; }
-					.ai-analyst-report-controls .form-control { min-height: 34px; font-size: 12px; }
 					.ai-analyst-report-evidence { margin-top: 12px; font-size: 12px; }
 					.ai-analyst-report-evidence summary { color: var(--primary, #2490ef); cursor: pointer; font-weight: 600; }
 					.ai-analyst-report-table-wrap { max-height: 300px; overflow: auto; margin-top: 8px; border: 1px solid var(--border-color, #dfe5ec); border-radius: 7px; }
 					.ai-analyst-report-table { margin: 0; min-width: 680px; font-size: 12px; }
 					.ai-analyst-report-table th { position: sticky; top: 0; padding: 8px 10px; background: #edf3f9; color: var(--heading-color, #1f2937); font-weight: 600; white-space: nowrap; }
 					.ai-analyst-report-table td { padding: 8px 10px; vertical-align: top; }
+					.ai-analyst-export { margin-top: 9px; padding: 5px 9px; border-radius: 7px; font-size: 12px; }
 					.ai-analyst-follow-ups { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color, #dfe5ec); }
 					.ai-analyst-follow-ups-label { margin-bottom: 8px; color: var(--text-muted, #64748b); font-size: 12px; font-weight: 600; }
 					.ai-analyst-follow-up-list { display: flex; flex-wrap: wrap; gap: 7px; }
 					.ai-analyst-follow-up { padding: 5px 9px; background: #f8fafc; color: var(--primary, #2490ef); border: 1px solid #c9ddfb; border-radius: 999px; cursor: pointer; font-size: 12px; line-height: 1.35; text-align: left; }
 					.ai-analyst-follow-up:hover { background: #e8f1ff; border-color: var(--primary, #2490ef); }
 					.ai-analyst-error { display: inline-block; margin-bottom: 15px; padding: 10px 14px; background: #fff0ee; color: #9b2c2c; border: 1px solid #fecaca; border-radius: 10px; }
-					@media (max-width: 576px) { .ai-analyst-messages { padding: 13px; } .ai-analyst-user-bubble, .ai-analyst-answer { max-width: 100%; } .ai-analyst-input { align-items: stretch; flex-direction: column; } .ai-analyst-report-controls { grid-template-columns: 1fr; } }
+					@media (max-width: 576px) { .ai-analyst-messages { padding: 13px; } .ai-analyst-user-bubble, .ai-analyst-answer { max-width: 100%; } .ai-analyst-input { align-items: stretch; flex-direction: column; } }
 				</style>
 				<div class="ai-analyst-messages"></div>
 				<div class="ai-analyst-input">
@@ -83,35 +80,12 @@ class AIAnalystChat {
 						<button type="button" class="ai-analyst-suggestion" data-question="Which batches expire in 90 days?">Batches expiring soon</button>
 					</div>
 				</div>
-				<details class="ai-analyst-report-filter-toggle">
-					<summary>Optional report filters</summary>
-					<div class="ai-analyst-report-controls">
-						<select class="form-control ai-analyst-report-dataset"><option value="">Auto report selection</option><option value="stock_balance">Data View: Stock Balance</option><option value="stock_movement">Data View: Stock Movement</option><option value="order_commitments">Data View: Open Orders</option><option value="monthly_consumption">Data View: Monthly Consumption</option><option value="batch_expiry">Data View: Batch Expiry</option><option value="erpnext_stock_balance">ERPNext Report: Stock Balance</option><option value="erpnext_stock_ledger">ERPNext Report: Stock Ledger</option><option value="erpnext_stock_ageing">ERPNext Report: Stock Ageing</option><option value="erpnext_purchase_order_analysis">ERPNext Report: Purchase Order Analysis</option><option value="erpnext_sales_order_analysis">ERPNext Report: Sales Order Analysis</option></select>
-						<input type="text" class="form-control ai-analyst-report-company" placeholder="Company (optional)">
-						<input type="date" class="form-control ai-analyst-report-from-date" aria-label="From date">
-						<input type="date" class="form-control ai-analyst-report-to-date" aria-label="To date">
-						<input type="text" class="form-control ai-analyst-report-warehouse" placeholder="Warehouse (optional)">
-						<input type="text" class="form-control ai-analyst-report-item" placeholder="Item code (optional)">
-						<input type="text" class="form-control ai-analyst-report-group" placeholder="Item group (optional)">
-						<input type="text" class="form-control ai-analyst-report-supplier" placeholder="Supplier (PO report)">
-						<input type="text" class="form-control ai-analyst-report-customer" placeholder="Customer (SO report)">
-					</div>
-				</details>
 			</div>
 		`).appendTo(this.page.main);
 
 		this.$messages = this.$container.find('.ai-analyst-messages');
 		this.$input = this.$container.find('.ai-analyst-question');
 		this.$button = this.$container.find('.ai-analyst-ask');
-		this.$reportDataset = this.$container.find('.ai-analyst-report-dataset');
-		this.$reportCompany = this.$container.find('.ai-analyst-report-company');
-		this.$reportFromDate = this.$container.find('.ai-analyst-report-from-date');
-		this.$reportToDate = this.$container.find('.ai-analyst-report-to-date');
-		this.$reportWarehouse = this.$container.find('.ai-analyst-report-warehouse');
-		this.$reportItem = this.$container.find('.ai-analyst-report-item');
-		this.$reportGroup = this.$container.find('.ai-analyst-report-group');
-		this.$reportSupplier = this.$container.find('.ai-analyst-report-supplier');
-		this.$reportCustomer = this.$container.find('.ai-analyst-report-customer');
 
 		this.$button.on('click', () => this.ask());
 		this.$input.on('keypress', (e) => {
@@ -132,7 +106,7 @@ class AIAnalystChat {
 
 		frappe.call({
 			method: 'erpnext_ai_business_analyst.api.ask_question',
-			args: { question, report_dataset: this.$reportDataset.val() || null, report_filters: { company: this.$reportCompany.val().trim(), from_date: this.$reportFromDate.val(), to_date: this.$reportToDate.val(), warehouse: this.$reportWarehouse.val().trim(), item_code: this.$reportItem.val().trim(), item_group: this.$reportGroup.val().trim(), supplier: this.$reportSupplier.val().trim(), customer: this.$reportCustomer.val().trim() } },
+			args: { question },
 			callback: (r) => {
 				this.$button.prop('disabled', false).text('Ask');
 				if (r.message) {
@@ -337,6 +311,26 @@ class AIAnalystChat {
 		return `${html}</tbody></table></div></details>`;
 	}
 
+	export_report_rows(records, source_label) {
+		const rows = records.filter((record) => record && typeof record === 'object' && !Array.isArray(record));
+		if (!rows.length) return;
+		const columns = [...new Set(rows.flatMap((record) => Object.keys(record)))];
+		const csv_cell = (value) => {
+			const text = value === null || value === undefined ? '' : (typeof value === 'object' ? JSON.stringify(value) : String(value));
+			return `"${text.replace(/"/g, '""')}"`;
+		};
+		const csv = [columns.map(csv_cell).join(','), ...rows.map((row) => columns.map((column) => csv_cell(row[column])).join(','))].join('\n');
+		const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = `${String(source_label || 'inventory-report').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-shown-rows.csv`;
+		document.body.appendChild(link);
+		link.click();
+		link.remove();
+		URL.revokeObjectURL(url);
+	}
+
 	follow_up_questions(data) {
 		const investigated = (data.steps || []).map((step) => step.skill_name).join(' ').toLowerCase();
 		if (investigated.includes('purchase') || investigated.includes('supplier')) {
@@ -382,6 +376,7 @@ class AIAnalystChat {
 			html += `<div class="ai-analyst-finding-detail">${frappe.utils.escape_html(data.report_evidence_summary || '')}</div>`;
 			if (data.report_records && data.report_records.length) {
 				html += this.format_report_table(data.report_records);
+				html += '<button type="button" class="btn btn-default btn-sm ai-analyst-export">Export shown rows (CSV)</button>';
 			}
 		} else if (ranAnySkill && data.findings && data.findings.length > 0) {
 			html += `<table class="table ai-analyst-findings">
@@ -455,6 +450,9 @@ class AIAnalystChat {
 		});
 		$answer.find('.ai-analyst-follow-up').on('click', (e) => {
 			this.$input.val($(e.currentTarget).data('question')).focus();
+		});
+		$answer.find('.ai-analyst-export').on('click', () => {
+			this.export_report_rows(data.report_records || [], data.report_source);
 		});
 		this.scroll_to_bottom();
 	}
