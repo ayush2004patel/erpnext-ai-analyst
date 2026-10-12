@@ -43,6 +43,8 @@ class AIAnalystChat {
 					.ai-analyst-input { display: flex; gap: 10px; margin-top: 14px; }
 					.ai-analyst-input .form-control { min-height: 42px; border-radius: 9px; }
 					.ai-analyst-input .btn { min-width: 82px; border-radius: 9px; }
+					.ai-analyst-report-selector { display: flex; align-items: center; gap: 8px; margin-top: 10px; color: var(--text-muted, #64748b); font-size: 12px; }
+					.ai-analyst-report-selector select { max-width: 320px; min-height: 34px; font-size: 12px; }
 					.ai-analyst-suggestions { margin-top: 12px; padding: 12px 14px; background: #f8fafc; border: 1px solid var(--border-color, #dfe5ec); border-radius: 10px; }
 					.ai-analyst-suggestions-label { margin-bottom: 8px; color: var(--text-muted, #64748b); font-size: 12px; font-weight: 600; }
 					.ai-analyst-suggestion-list { display: flex; flex-wrap: wrap; gap: 7px; }
@@ -61,13 +63,29 @@ class AIAnalystChat {
 					.ai-analyst-follow-up { padding: 5px 9px; background: #f8fafc; color: var(--primary, #2490ef); border: 1px solid #c9ddfb; border-radius: 999px; cursor: pointer; font-size: 12px; line-height: 1.35; text-align: left; }
 					.ai-analyst-follow-up:hover { background: #e8f1ff; border-color: var(--primary, #2490ef); }
 					.ai-analyst-error { display: inline-block; margin-bottom: 15px; padding: 10px 14px; background: #fff0ee; color: #9b2c2c; border: 1px solid #fecaca; border-radius: 10px; }
-					@media (max-width: 576px) { .ai-analyst-messages { padding: 13px; } .ai-analyst-user-bubble, .ai-analyst-answer { max-width: 100%; } .ai-analyst-input { align-items: stretch; flex-direction: column; } }
+					@media (max-width: 576px) { .ai-analyst-messages { padding: 13px; } .ai-analyst-user-bubble, .ai-analyst-answer { max-width: 100%; } .ai-analyst-input { align-items: stretch; flex-direction: column; } .ai-analyst-report-selector { align-items: stretch; flex-direction: column; } .ai-analyst-report-selector select { max-width: none; } }
 				</style>
 				<div class="ai-analyst-messages"></div>
 				<div class="ai-analyst-input">
 					<input type="text" class="form-control ai-analyst-question"
 						placeholder="e.g. Which inventory has not moved for 90 days?">
 					<button class="btn btn-primary ai-analyst-ask">Ask</button>
+				</div>
+				<div class="ai-analyst-report-selector">
+					<label for="ai-analyst-report-dataset">Data source</label>
+					<select id="ai-analyst-report-dataset" class="form-control ai-analyst-report-dataset">
+						<option value="">Auto select</option>
+						<option value="stock_balance">Data View: Stock Balance</option>
+						<option value="stock_movement">Data View: Stock Movement</option>
+						<option value="order_commitments">Data View: Open Orders</option>
+						<option value="monthly_consumption">Data View: Monthly Consumption</option>
+						<option value="batch_expiry">Data View: Batch Expiry</option>
+						<option value="erpnext_stock_balance">ERPNext Report: Stock Balance</option>
+						<option value="erpnext_stock_ledger">ERPNext Report: Stock Ledger</option>
+						<option value="erpnext_stock_ageing">ERPNext Report: Stock Ageing</option>
+						<option value="erpnext_purchase_order_analysis">ERPNext Report: Purchase Order Analysis</option>
+						<option value="erpnext_sales_order_analysis">ERPNext Report: Sales Order Analysis</option>
+					</select>
 				</div>
 				<div class="ai-analyst-suggestions">
 					<div class="ai-analyst-suggestions-label">Try asking about your inventory</div>
@@ -86,6 +104,7 @@ class AIAnalystChat {
 		this.$messages = this.$container.find('.ai-analyst-messages');
 		this.$input = this.$container.find('.ai-analyst-question');
 		this.$button = this.$container.find('.ai-analyst-ask');
+		this.$reportDataset = this.$container.find('.ai-analyst-report-dataset');
 
 		this.$button.on('click', () => this.ask());
 		this.$input.on('keypress', (e) => {
@@ -106,7 +125,7 @@ class AIAnalystChat {
 
 		frappe.call({
 			method: 'erpnext_ai_business_analyst.api.ask_question',
-			args: { question },
+			args: { question, report_dataset: this.$reportDataset.val() || null },
 			callback: (r) => {
 				this.$button.prop('disabled', false).text('Ask');
 				if (r.message) {
