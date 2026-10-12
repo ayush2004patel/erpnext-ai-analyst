@@ -28,7 +28,10 @@ def answer_from_approved_dataset(question: str, tool_registry: ToolRegistry, llm
     if dataset is None:
         return None
     safe_filters = {key: value for key, value in (filters or {}).items() if key in dataset.allowed_filters and value not in (None, "")}
-    result = tool_registry.get_tool(dataset.tool_name)(**{**dataset.default_inputs, **safe_filters})
+    inputs = {**dataset.default_inputs, **safe_filters}
+    if dataset.tool_name == "inventory.run_builtin_report":
+        inputs = {**dataset.default_inputs, "filters": safe_filters}
+    result = tool_registry.get_tool(dataset.tool_name)(**inputs)
     if result.status != ToolStatus.OK:
         return ReportAnswer("I could not read the approved ERP data source for this question.", dataset.label, 0, result.error or "Data source unavailable", [], safe_filters)
     if not result.data:

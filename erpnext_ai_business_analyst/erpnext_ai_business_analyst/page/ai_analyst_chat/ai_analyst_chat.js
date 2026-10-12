@@ -58,7 +58,7 @@ class AIAnalystChat {
 					<button class="btn btn-primary ai-analyst-ask">Ask</button>
 				</div>
 				<div class="ai-analyst-report-controls">
-					<select class="form-control ai-analyst-report-dataset"><option value="">Auto report selection</option><option value="stock_balance">Stock Balance</option><option value="stock_movement">Stock Movement</option><option value="order_commitments">Open Orders</option><option value="monthly_consumption">Monthly Consumption</option><option value="batch_expiry">Batch Expiry</option></select>
+					<select class="form-control ai-analyst-report-dataset"><option value="">Auto report selection</option><option value="stock_balance">Data View: Stock Balance</option><option value="stock_movement">Data View: Stock Movement</option><option value="order_commitments">Data View: Open Orders</option><option value="monthly_consumption">Data View: Monthly Consumption</option><option value="batch_expiry">Data View: Batch Expiry</option><option value="erpnext_stock_balance">ERPNext Report: Stock Balance</option><option value="erpnext_stock_ledger">ERPNext Report: Stock Ledger</option><option value="erpnext_stock_ageing">ERPNext Report: Stock Ageing</option><option value="erpnext_purchase_order_analysis">ERPNext Report: Purchase Order Analysis</option><option value="erpnext_sales_order_analysis">ERPNext Report: Sales Order Analysis</option></select>
 					<input type="text" class="form-control ai-analyst-report-warehouse" placeholder="Warehouse (optional)">
 					<input type="text" class="form-control ai-analyst-report-item" placeholder="Item code (optional)">
 					<input type="text" class="form-control ai-analyst-report-group" placeholder="Item group (optional)">

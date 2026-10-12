@@ -29,6 +29,7 @@ ai_analyst_tools = [
     "erpnext_ai_business_analyst.tools.inventory.batch_expiry.TOOL",
     "erpnext_ai_business_analyst.tools.inventory.monthly_consumption.TOOL",
     "erpnext_ai_business_analyst.tools.inventory.supplier_delivery.TOOL",
+    "erpnext_ai_business_analyst.tools.inventory.builtin_report.TOOL",
 ]
 
 ai_analyst_skills = [
