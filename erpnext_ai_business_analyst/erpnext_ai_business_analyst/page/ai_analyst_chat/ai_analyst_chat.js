@@ -43,6 +43,11 @@ class AIAnalystChat {
 					.ai-analyst-input { display: flex; gap: 10px; margin-top: 14px; }
 					.ai-analyst-input .form-control { min-height: 42px; border-radius: 9px; }
 					.ai-analyst-input .btn { min-width: 82px; border-radius: 9px; }
+					.ai-analyst-suggestions { margin-top: 12px; padding: 12px 14px; background: #f8fafc; border: 1px solid var(--border-color, #dfe5ec); border-radius: 10px; }
+					.ai-analyst-suggestions-label { margin-bottom: 8px; color: var(--text-muted, #64748b); font-size: 12px; font-weight: 600; }
+					.ai-analyst-suggestion-list { display: flex; flex-wrap: wrap; gap: 7px; }
+					.ai-analyst-suggestion { padding: 5px 9px; background: var(--card-bg, #fff); color: var(--primary, #2490ef); border: 1px solid #c9ddfb; border-radius: 999px; cursor: pointer; font-size: 12px; line-height: 1.35; text-align: left; }
+					.ai-analyst-suggestion:hover { background: #e8f1ff; border-color: var(--primary, #2490ef); }
 					.ai-analyst-report-controls { display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); gap: 8px; margin-top: 9px; }
 					.ai-analyst-report-controls .form-control { min-height: 34px; font-size: 12px; }
 					.ai-analyst-report-evidence { margin-top: 12px; font-size: 12px; }
@@ -56,6 +61,17 @@ class AIAnalystChat {
 					<input type="text" class="form-control ai-analyst-question"
 						placeholder="e.g. Which inventory has not moved for 90 days?">
 					<button class="btn btn-primary ai-analyst-ask">Ask</button>
+				</div>
+				<div class="ai-analyst-suggestions">
+					<div class="ai-analyst-suggestions-label">Try asking about your inventory</div>
+					<div class="ai-analyst-suggestion-list">
+						<button type="button" class="ai-analyst-suggestion" data-question="Which items need to be reordered?">Items to reorder</button>
+						<button type="button" class="ai-analyst-suggestion" data-question="Which inventory has not moved for 90 days?">Dead stock</button>
+						<button type="button" class="ai-analyst-suggestion" data-question="Which items are at risk of stockout?">Stockout risk</button>
+						<button type="button" class="ai-analyst-suggestion" data-question="Which purchase orders will supply stock?">Incoming purchase orders</button>
+						<button type="button" class="ai-analyst-suggestion" data-question="What customer demand is still pending?">Pending customer demand</button>
+						<button type="button" class="ai-analyst-suggestion" data-question="Which batches expire in 90 days?">Batches expiring soon</button>
+					</div>
 				</div>
 				<div class="ai-analyst-report-controls">
 					<select class="form-control ai-analyst-report-dataset"><option value="">Auto report selection</option><option value="stock_balance">Data View: Stock Balance</option><option value="stock_movement">Data View: Stock Movement</option><option value="order_commitments">Data View: Open Orders</option><option value="monthly_consumption">Data View: Monthly Consumption</option><option value="batch_expiry">Data View: Batch Expiry</option><option value="erpnext_stock_balance">ERPNext Report: Stock Balance</option><option value="erpnext_stock_ledger">ERPNext Report: Stock Ledger</option><option value="erpnext_stock_ageing">ERPNext Report: Stock Ageing</option><option value="erpnext_purchase_order_analysis">ERPNext Report: Purchase Order Analysis</option><option value="erpnext_sales_order_analysis">ERPNext Report: Sales Order Analysis</option></select>
@@ -77,6 +93,9 @@ class AIAnalystChat {
 		this.$button.on('click', () => this.ask());
 		this.$input.on('keypress', (e) => {
 			if (e.which === 13) this.ask();
+		});
+		this.$container.find('.ai-analyst-suggestion').on('click', (e) => {
+			this.$input.val($(e.currentTarget).data('question')).focus();
 		});
 	}
 
