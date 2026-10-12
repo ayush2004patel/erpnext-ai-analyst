@@ -54,7 +54,15 @@ class AIAnalystChat {
 					.ai-analyst-report-controls .form-control { min-height: 34px; font-size: 12px; }
 					.ai-analyst-report-evidence { margin-top: 12px; font-size: 12px; }
 					.ai-analyst-report-evidence summary { color: var(--primary, #2490ef); cursor: pointer; font-weight: 600; }
-					.ai-analyst-report-evidence pre { max-height: 260px; overflow: auto; margin-top: 8px; padding: 10px; background: #f8fafc; border-radius: 7px; font-size: 11px; white-space: pre-wrap; }
+					.ai-analyst-report-table-wrap { max-height: 300px; overflow: auto; margin-top: 8px; border: 1px solid var(--border-color, #dfe5ec); border-radius: 7px; }
+					.ai-analyst-report-table { margin: 0; min-width: 680px; font-size: 12px; }
+					.ai-analyst-report-table th { position: sticky; top: 0; padding: 8px 10px; background: #edf3f9; color: var(--heading-color, #1f2937); font-weight: 600; white-space: nowrap; }
+					.ai-analyst-report-table td { padding: 8px 10px; vertical-align: top; }
+					.ai-analyst-follow-ups { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color, #dfe5ec); }
+					.ai-analyst-follow-ups-label { margin-bottom: 8px; color: var(--text-muted, #64748b); font-size: 12px; font-weight: 600; }
+					.ai-analyst-follow-up-list { display: flex; flex-wrap: wrap; gap: 7px; }
+					.ai-analyst-follow-up { padding: 5px 9px; background: #f8fafc; color: var(--primary, #2490ef); border: 1px solid #c9ddfb; border-radius: 999px; cursor: pointer; font-size: 12px; line-height: 1.35; text-align: left; }
+					.ai-analyst-follow-up:hover { background: #e8f1ff; border-color: var(--primary, #2490ef); }
 					.ai-analyst-error { display: inline-block; margin-bottom: 15px; padding: 10px 14px; background: #fff0ee; color: #9b2c2c; border: 1px solid #fecaca; border-radius: 10px; }
 					@media (max-width: 576px) { .ai-analyst-messages { padding: 13px; } .ai-analyst-user-bubble, .ai-analyst-answer { max-width: 100%; } .ai-analyst-input { align-items: stretch; flex-direction: column; } .ai-analyst-report-controls { grid-template-columns: 1fr; } }
 				</style>
@@ -299,6 +307,63 @@ class AIAnalystChat {
 		return messages[skill_name] || 'No matching inventory records were found for this question.';
 	}
 
+	format_report_column_name(name) {
+		return String(name).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+	}
+
+	format_report_value(value) {
+		if (value === null || value === undefined || value === '') return '—';
+		const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
+		return text.length > 160 ? `${text.slice(0, 157)}...` : text;
+	}
+
+	format_report_table(records) {
+		const rows = records.filter((record) => record && typeof record === 'object' && !Array.isArray(record));
+		if (!rows.length) return '';
+		const columns = [...new Set(rows.slice(0, 10).flatMap((record) => Object.keys(record)))].slice(0, 10);
+		const escape = frappe.utils.escape_html;
+		let html = `<details class="ai-analyst-report-evidence"><summary>View ${rows.length} returned report row${rows.length === 1 ? '' : 's'}</summary><div class="ai-analyst-report-table-wrap"><table class="table table-bordered ai-analyst-report-table"><thead><tr>`;
+		columns.forEach((column) => {
+			html += `<th>${escape(this.format_report_column_name(column))}</th>`;
+		});
+		html += '</tr></thead><tbody>';
+		rows.forEach((row) => {
+			html += '<tr>';
+			columns.forEach((column) => {
+				html += `<td>${escape(this.format_report_value(row[column]))}</td>`;
+			});
+			html += '</tr>';
+		});
+		return `${html}</tbody></table></div></details>`;
+	}
+
+	follow_up_questions(data) {
+		const investigated = (data.steps || []).map((step) => step.skill_name).join(' ').toLowerCase();
+		if (investigated.includes('purchase') || investigated.includes('supplier')) {
+			return ['Which purchase orders are overdue?', 'Which suppliers have delivery delays?'];
+		}
+		if (investigated.includes('sales') || investigated.includes('customer')) {
+			return ['What customer demand is still pending?', 'Which items are at risk of stockout?'];
+		}
+		if (investigated.includes('batch') || investigated.includes('expiry')) {
+			return ['Which batches expire in 90 days?', 'Which items need to be reordered?'];
+		}
+		if (investigated.includes('movement') || investigated.includes('ageing') || investigated.includes('dead_stock')) {
+			return ['Which inventory has not moved for 90 days?', 'Which items are slow moving?'];
+		}
+		return ['Which items need to be reordered?', 'Which items are at risk of stockout?'];
+	}
+
+	format_follow_ups(data) {
+		if (!data.report_answer && !(data.steps && data.steps.length)) return '';
+		const escape = frappe.utils.escape_html;
+		let html = '<div class="ai-analyst-follow-ups"><div class="ai-analyst-follow-ups-label">Related questions</div><div class="ai-analyst-follow-up-list">';
+		this.follow_up_questions(data).forEach((question) => {
+			html += `<button type="button" class="ai-analyst-follow-up" data-question="${escape(question)}">${escape(question)}</button>`;
+		});
+		return `${html}</div></div>`;
+	}
+
 	add_answer(data) {
 		let html = `<div class="ai-analyst-answer"><div class="ai-analyst-answer-card">`;
 
@@ -316,7 +381,7 @@ class AIAnalystChat {
 			html += `<div class="ai-analyst-finding-summary">${frappe.utils.escape_html(data.report_answer)}</div>`;
 			html += `<div class="ai-analyst-finding-detail">${frappe.utils.escape_html(data.report_evidence_summary || '')}</div>`;
 			if (data.report_records && data.report_records.length) {
-				html += `<details class="ai-analyst-report-evidence"><summary>View returned report rows</summary><pre>${frappe.utils.escape_html(JSON.stringify(data.report_records, null, 2))}</pre></details>`;
+				html += this.format_report_table(data.report_records);
 			}
 		} else if (ranAnySkill && data.findings && data.findings.length > 0) {
 			html += `<table class="table ai-analyst-findings">
@@ -372,6 +437,8 @@ class AIAnalystChat {
 			</div>`;
 		}
 
+		html += this.format_follow_ups(data);
+
 		if (data.log_name) {
 			html += `<div style="margin-top: 6px;">
 				<a href="/app/ai-investigation-log/${encodeURIComponent(data.log_name)}"
@@ -381,10 +448,13 @@ class AIAnalystChat {
 
 		html += `</div></div>`;
 
-		this.$messages.append(html);
-		this.$messages.find('.ai-analyst-toggle-evidence').last().on('click', (e) => {
+		const $answer = $(html).appendTo(this.$messages);
+		$answer.find('.ai-analyst-toggle-evidence').on('click', (e) => {
 			e.preventDefault();
 			$('#' + $(e.currentTarget).data('target')).slideToggle();
+		});
+		$answer.find('.ai-analyst-follow-up').on('click', (e) => {
+			this.$input.val($(e.currentTarget).data('question')).focus();
 		});
 		this.scroll_to_bottom();
 	}
