@@ -43,8 +43,13 @@ class AIAnalystChat {
 					.ai-analyst-input { display: flex; gap: 10px; margin-top: 14px; }
 					.ai-analyst-input .form-control { min-height: 42px; border-radius: 9px; }
 					.ai-analyst-input .btn { min-width: 82px; border-radius: 9px; }
+					.ai-analyst-report-controls { display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); gap: 8px; margin-top: 9px; }
+					.ai-analyst-report-controls .form-control { min-height: 34px; font-size: 12px; }
+					.ai-analyst-report-evidence { margin-top: 12px; font-size: 12px; }
+					.ai-analyst-report-evidence summary { color: var(--primary, #2490ef); cursor: pointer; font-weight: 600; }
+					.ai-analyst-report-evidence pre { max-height: 260px; overflow: auto; margin-top: 8px; padding: 10px; background: #f8fafc; border-radius: 7px; font-size: 11px; white-space: pre-wrap; }
 					.ai-analyst-error { display: inline-block; margin-bottom: 15px; padding: 10px 14px; background: #fff0ee; color: #9b2c2c; border: 1px solid #fecaca; border-radius: 10px; }
-					@media (max-width: 576px) { .ai-analyst-messages { padding: 13px; } .ai-analyst-user-bubble, .ai-analyst-answer { max-width: 100%; } .ai-analyst-input { align-items: stretch; flex-direction: column; } }
+					@media (max-width: 576px) { .ai-analyst-messages { padding: 13px; } .ai-analyst-user-bubble, .ai-analyst-answer { max-width: 100%; } .ai-analyst-input { align-items: stretch; flex-direction: column; } .ai-analyst-report-controls { grid-template-columns: 1fr; } }
 				</style>
 				<div class="ai-analyst-messages"></div>
 				<div class="ai-analyst-input">
@@ -52,12 +57,22 @@ class AIAnalystChat {
 						placeholder="e.g. Which inventory has not moved for 90 days?">
 					<button class="btn btn-primary ai-analyst-ask">Ask</button>
 				</div>
+				<div class="ai-analyst-report-controls">
+					<select class="form-control ai-analyst-report-dataset"><option value="">Auto report selection</option><option value="stock_balance">Stock Balance</option><option value="stock_movement">Stock Movement</option><option value="order_commitments">Open Orders</option><option value="monthly_consumption">Monthly Consumption</option><option value="batch_expiry">Batch Expiry</option></select>
+					<input type="text" class="form-control ai-analyst-report-warehouse" placeholder="Warehouse (optional)">
+					<input type="text" class="form-control ai-analyst-report-item" placeholder="Item code (optional)">
+					<input type="text" class="form-control ai-analyst-report-group" placeholder="Item group (optional)">
+				</div>
 			</div>
 		`).appendTo(this.page.main);
 
 		this.$messages = this.$container.find('.ai-analyst-messages');
 		this.$input = this.$container.find('.ai-analyst-question');
 		this.$button = this.$container.find('.ai-analyst-ask');
+		this.$reportDataset = this.$container.find('.ai-analyst-report-dataset');
+		this.$reportWarehouse = this.$container.find('.ai-analyst-report-warehouse');
+		this.$reportItem = this.$container.find('.ai-analyst-report-item');
+		this.$reportGroup = this.$container.find('.ai-analyst-report-group');
 
 		this.$button.on('click', () => this.ask());
 		this.$input.on('keypress', (e) => {
@@ -75,7 +90,7 @@ class AIAnalystChat {
 
 		frappe.call({
 			method: 'erpnext_ai_business_analyst.api.ask_question',
-			args: { question },
+			args: { question, report_dataset: this.$reportDataset.val() || null, report_filters: { warehouse: this.$reportWarehouse.val().trim(), item_code: this.$reportItem.val().trim(), item_group: this.$reportGroup.val().trim() } },
 			callback: (r) => {
 				this.$button.prop('disabled', false).text('Ask');
 				if (r.message) {
@@ -266,6 +281,9 @@ class AIAnalystChat {
 			html += `<div class="ai-analyst-finding-title">${frappe.utils.escape_html(data.report_source || 'Approved ERP report')}</div>`;
 			html += `<div class="ai-analyst-finding-summary">${frappe.utils.escape_html(data.report_answer)}</div>`;
 			html += `<div class="ai-analyst-finding-detail">${frappe.utils.escape_html(data.report_evidence_summary || '')}</div>`;
+			if (data.report_records && data.report_records.length) {
+				html += `<details class="ai-analyst-report-evidence"><summary>View returned report rows</summary><pre>${frappe.utils.escape_html(JSON.stringify(data.report_records, null, 2))}</pre></details>`;
+			}
 		} else if (ranAnySkill && data.findings && data.findings.length > 0) {
 			html += `<table class="table ai-analyst-findings">
 				<thead><tr><th>Finding</th><th style="width: 90px;">Confidence</th></tr></thead>

@@ -13,14 +13,15 @@ class ApprovedDataset:
     triggers: tuple[str, ...]
     tool_name: str
     default_inputs: dict = field(default_factory=dict)
+    allowed_filters: tuple[str, ...] = ()
 
 
 DATASETS = (
-    ApprovedDataset("stock_balance", "Stock Balance", "Current stock, reservations, incoming quantity, and valuation by item and warehouse.", ("stock balance", "stock in warehouse", "how much stock", "available quantity"), "inventory.get_stock_balance"),
-    ApprovedDataset("stock_movement", "Stock Movement", "Recent incoming and outgoing stock movement by item and warehouse.", ("received most stock", "stock received", "stock issued", "stock movement", "goods received"), "inventory.get_item_movement", {"window_days": 90}),
-    ApprovedDataset("order_commitments", "Open Orders", "Outstanding purchase-order supply and sales-order demand.", ("pending orders", "open orders", "supplier orders", "customer orders", "outstanding orders"), "inventory.get_order_commitments"),
-    ApprovedDataset("monthly_consumption", "Monthly Consumption", "Monthly outgoing quantities for demand analysis.", ("monthly consumption", "monthly demand", "consumption trend", "demand trend"), "inventory.get_monthly_consumption", {"months": 6}),
-    ApprovedDataset("batch_expiry", "Batch Expiry", "Active batches with an expiry date in the next 90 days.", ("batch expiry", "expiry report", "expiring batches"), "inventory.get_batch_expiry", {"days_ahead": 90}),
+    ApprovedDataset("stock_balance", "Stock Balance", "Current stock, reservations, incoming quantity, and valuation by item and warehouse.", ("stock balance", "stock in warehouse", "how much stock", "available quantity"), "inventory.get_stock_balance", allowed_filters=("item_code", "warehouse", "item_group")),
+    ApprovedDataset("stock_movement", "Stock Movement", "Recent incoming and outgoing stock movement by item and warehouse.", ("received most stock", "stock received", "stock issued", "stock movement", "goods received"), "inventory.get_item_movement", {"window_days": 90}, ("item_code", "warehouse", "item_group", "window_days")),
+    ApprovedDataset("order_commitments", "Open Orders", "Outstanding purchase-order supply and sales-order demand.", ("pending orders", "open orders", "supplier orders", "customer orders", "outstanding orders"), "inventory.get_order_commitments", allowed_filters=("item_code", "warehouse")),
+    ApprovedDataset("monthly_consumption", "Monthly Consumption", "Monthly outgoing quantities for demand analysis.", ("monthly consumption", "monthly demand", "consumption trend", "demand trend"), "inventory.get_monthly_consumption", {"months": 6}, ("item_code", "warehouse", "item_group", "months")),
+    ApprovedDataset("batch_expiry", "Batch Expiry", "Active batches with an expiry date in the next 90 days.", ("batch expiry", "expiry report", "expiring batches"), "inventory.get_batch_expiry", {"days_ahead": 90}, ("item_code", "days_ahead")),
 )
 
 
@@ -33,3 +34,7 @@ def select_dataset(question: str) -> ApprovedDataset | None:
     scored = [(sum(trigger_score(trigger) for trigger in dataset.triggers), dataset) for dataset in DATASETS]
     score, dataset = max(scored, key=lambda pair: pair[0])
     return dataset if score else None
+
+
+def get_dataset(name: str | None) -> ApprovedDataset | None:
+    return next((dataset for dataset in DATASETS if dataset.name == name), None)

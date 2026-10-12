@@ -18,21 +18,27 @@ import frappe
 
 from erpnext_ai_business_analyst.agent.llm.ollama_client import OllamaClient
 from erpnext_ai_business_analyst.agent.llm.ollama_embedding_client import OllamaEmbeddingClient
-from erpnext_ai_business_analyst.agent.service import investigate
+from erpnext_ai_business_analyst.agent.persistence import save_investigation_log
+from erpnext_ai_business_analyst.agent.planner import InvestigationStep, run_investigation
 from erpnext_ai_business_analyst.reports.qa import answer_from_approved_dataset
+from erpnext_ai_business_analyst.skills.base import Evidence, Finding, SkillResult, SkillStatus
 from erpnext_ai_business_analyst.skills.registry import SkillRegistry
 from erpnext_ai_business_analyst.tools.registry import ToolRegistry
 
 
 @frappe.whitelist()
-def ask_question(question: str) -> dict:
+def ask_question(question: str, report_dataset: str | None = None, report_filters: dict | None = None) -> dict:
     if not question or not question.strip():
         frappe.throw("Question is required")
+    if isinstance(report_filters, str):
+        report_filters = frappe.parse_json(report_filters)
+    if not isinstance(report_filters, dict):
+        report_filters = {}
 
     llm_client = OllamaClient()  # reads ollama_model/ollama_host from site_config
     embedding_client = OllamaEmbeddingClient()  # reads ollama_embedding_model/ollama_host
 
-    result, log_name = investigate(
+    result = run_investigation(
         question=question,
         tool_registry=ToolRegistry.get(),
         skill_registry=SkillRegistry.get(),
@@ -40,8 +46,18 @@ def ask_question(question: str) -> dict:
         embedding_client=embedding_client,
     )
     report_answer = None
-    if result.category == "no_matching_skill" and not result.history:
-        report_answer = answer_from_approved_dataset(question, ToolRegistry.get(), llm_client)
+    if report_dataset or (result.category == "no_matching_skill" and not result.history):
+        report_answer = answer_from_approved_dataset(question, ToolRegistry.get(), llm_client, report_dataset, report_filters)
+        if report_answer:
+            report_result = SkillResult(
+                status=SkillStatus.OK,
+                findings=[Finding(claim=report_answer.answer, confidence=1.0, supporting_evidence_ids=["ev-report"])],
+                metrics={"dataset": report_answer.source_label, "record_count": report_answer.record_count},
+                evidence=[Evidence("ev-report", f"report:{report_answer.source_label}", {"filters": report_answer.filters}, report_answer.records, report_answer.evidence_summary)],
+            )
+            result.history.append(InvestigationStep(skill_name=f"report.{report_answer.source_label}", inputs=report_answer.filters, result=report_result))
+            result.hop_count = len(result.history)
+    log_name = save_investigation_log(question, result)
 
     return {
         "status": result.status,
@@ -70,6 +86,7 @@ def ask_question(question: str) -> dict:
         "report_source": report_answer.source_label if report_answer else None,
         "report_record_count": report_answer.record_count if report_answer else None,
         "report_evidence_summary": report_answer.evidence_summary if report_answer else None,
+        "report_records": report_answer.records if report_answer else [],
     }
 
 
