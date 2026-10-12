@@ -19,6 +19,7 @@ import frappe
 from erpnext_ai_business_analyst.agent.llm.ollama_client import OllamaClient
 from erpnext_ai_business_analyst.agent.llm.ollama_embedding_client import OllamaEmbeddingClient
 from erpnext_ai_business_analyst.agent.service import investigate
+from erpnext_ai_business_analyst.reports.qa import answer_from_approved_dataset
 from erpnext_ai_business_analyst.skills.registry import SkillRegistry
 from erpnext_ai_business_analyst.tools.registry import ToolRegistry
 
@@ -38,6 +39,9 @@ def ask_question(question: str) -> dict:
         llm_client=llm_client,
         embedding_client=embedding_client,
     )
+    report_answer = None
+    if result.category == "no_matching_skill" and not result.history:
+        report_answer = answer_from_approved_dataset(question, ToolRegistry.get(), llm_client)
 
     return {
         "status": result.status,
@@ -62,6 +66,10 @@ def ask_question(question: str) -> dict:
         ],
         "decision_errors": result.decision_errors,
         "log_name": log_name,
+        "report_answer": report_answer.answer if report_answer else None,
+        "report_source": report_answer.source_label if report_answer else None,
+        "report_record_count": report_answer.record_count if report_answer else None,
+        "report_evidence_summary": report_answer.evidence_summary if report_answer else None,
     }
 
 

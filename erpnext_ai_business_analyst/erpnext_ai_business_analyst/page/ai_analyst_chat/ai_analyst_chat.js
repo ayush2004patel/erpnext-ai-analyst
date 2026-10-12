@@ -262,7 +262,11 @@ class AIAnalystChat {
 			</div>`;
 		}
 
-		if (ranAnySkill && data.findings && data.findings.length > 0) {
+		if (data.report_answer) {
+			html += `<div class="ai-analyst-finding-title">${frappe.utils.escape_html(data.report_source || 'Approved ERP report')}</div>`;
+			html += `<div class="ai-analyst-finding-summary">${frappe.utils.escape_html(data.report_answer)}</div>`;
+			html += `<div class="ai-analyst-finding-detail">${frappe.utils.escape_html(data.report_evidence_summary || '')}</div>`;
+		} else if (ranAnySkill && data.findings && data.findings.length > 0) {
 			html += `<table class="table ai-analyst-findings">
 				<thead><tr><th>Finding</th><th style="width: 90px;">Confidence</th></tr></thead>
 				<tbody>`;

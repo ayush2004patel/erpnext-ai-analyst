@@ -72,6 +72,8 @@ Every investigation is asked in **your own words**, not exact keyword matches �
 
 Every finding is backed by real evidence — the exact ERPNext records and query filters that produced it — and every investigation is permanently logged (`AI Investigation Log` doctype) for audit.
 
+For approved report-style questions outside the 26 deterministic skills, a hybrid fallback can read only a small catalog of permission-checked, read-only ERP datasets (Stock Balance, Stock Movement, Open Orders, Monthly Consumption, and Batch Expiry) and summarize only the returned records.
+
 ## Also exposed via MCP
 
 The read-only Tool layer is available to any MCP client (Claude Code, Claude Desktop, etc.) over stdio — runs as a dedicated, permission-restricted service user, never Administrator. Skills and the Planner are intentionally *not* exposed this way; they're stateful multi-step investigations, not single tool calls. See `docs/ARCHITECTURE.md` §8 and `mcp_server/`.
