@@ -95,6 +95,14 @@ class AIAnalystChat {
 						<option value="erpnext_stock_ageing">ERPNext Report: Stock Ageing</option>
 						<option value="erpnext_purchase_order_analysis">ERPNext Report: Purchase Order Analysis</option>
 						<option value="erpnext_sales_order_analysis">ERPNext Report: Sales Order Analysis</option>
+						<option value="erpnext_warehouse_stock_balance">ERPNext Report: Warehouse Wise Stock Balance</option>
+						<option value="erpnext_stock_projected_qty">ERPNext Report: Stock Projected Qty</option>
+						<option value="erpnext_item_shortage">ERPNext Report: Item Shortage Report</option>
+						<option value="erpnext_batch_expiry">ERPNext Report: Batch Item Expiry Status</option>
+						<option value="erpnext_item_consumption">ERPNext Report: Item Wise Consumption</option>
+						<option value="erpnext_stock_account_value">ERPNext Report: Stock and Account Value Comparison</option>
+						<option value="erpnext_purchase_order_trends">ERPNext Report: Purchase Order Trends</option>
+						<option value="erpnext_sales_order_trends">ERPNext Report: Sales Order Trends</option>
 					</select>
 				</div>
 				<div class="ai-analyst-suggestions">

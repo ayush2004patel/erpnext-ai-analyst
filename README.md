@@ -74,7 +74,7 @@ Every finding is backed by real evidence — the exact ERPNext records and query
 
 For approved report-style questions outside the 26 deterministic skills, a hybrid fallback can read only a small catalog of permission-checked, read-only ERP datasets (Stock Balance, Stock Movement, Open Orders, Monthly Consumption, and Batch Expiry) and summarize only the returned records.
 
-The catalog also includes selected standard ERPNext reports: Stock Balance, Stock Ledger, Stock Ageing, Purchase Order Analysis, and Sales Order Analysis. The user must already have ERPNext report permission to run each one.
+The catalog also includes selected standard ERPNext reports: Stock Balance, Stock Ledger, Stock Ageing, Warehouse Wise Stock Balance, Stock Projected Qty, Item Shortage Report, Batch Item Expiry Status, Item Wise Consumption, Stock and Account Value Comparison, Purchase Order Analysis, Purchase Order Trends, Sales Order Analysis, and Sales Order Trends. The user must already have ERPNext report permission to run each one.
 
 ## Also exposed via MCP
 

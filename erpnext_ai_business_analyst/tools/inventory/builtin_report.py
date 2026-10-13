@@ -14,6 +14,14 @@ APPROVED_REPORTS = {
     "Stock Ageing",
     "Purchase Order Analysis",
     "Sales Order Analysis",
+    "Warehouse Wise Stock Balance",
+    "Stock Projected Qty",
+    "Item Shortage Report",
+    "Batch Item Expiry Status",
+    "Item Wise Consumption",
+    "Stock and Account Value Comparison",
+    "Purchase Order Trends",
+    "Sales Order Trends",
 }
 
 
@@ -32,6 +40,8 @@ def _run_builtin_report(report_name: str, filters: dict | None = None) -> ToolRe
         output = run(report_name, filters=report_filters)
     except frappe.PermissionError as error:
         return ToolResult(status=ToolStatus.ERROR, error=str(error), denied_reason=str(error))
+    except Exception as error:
+        return ToolResult(status=ToolStatus.ERROR, error=str(error))
     data = output.get("result") or []
     for field, value in row_filters.items():
         data = [row for row in data if isinstance(row, dict) and row.get(field) == value]
