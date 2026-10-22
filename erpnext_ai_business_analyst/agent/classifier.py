@@ -1,12 +1,9 @@
 """
 Question -> starting Skill classification.
 
-Step 8 (MVP_PLAN.md): deterministic keyword matching only — no LLM. Scores
-each registered Skill by how many of its `triggers` phrases appear as
-substrings in the lowercased question; picks the highest score. This is
-intentionally dumb — it exists to validate the planner's hop/chain/conclude
-mechanics before paying LLM classification cost. Step 9 replaces this
-function's body with an LLM call; callers (planner.py) don't change.
+Uses deterministic phrase matching only. The most specific matching phrase
+wins, so a question such as "missing reorder level" reaches the configuration
+Skill instead of the broader "reorder" Skill. Callers remain provider-agnostic.
 """
 
 from __future__ import annotations
@@ -20,7 +17,13 @@ def classify_question(question: str, skill_registry: SkillRegistry) -> str | Non
     best_score = 0
 
     for skill in skill_registry.all():
-        score = sum(1 for trigger in skill.triggers if trigger.lower() in q)
+        # Phrase word-count is a simple, explainable specificity score.
+        # Do not add all matches: broad Skills often contain short words that
+        # would otherwise overpower one precise phrase in another Skill.
+        score = max(
+            (len(trigger.split()) for trigger in skill.triggers if trigger.lower() in q),
+            default=0,
+        )
         if score > best_score:
             best_score = score
             best_skill_name = skill.name
