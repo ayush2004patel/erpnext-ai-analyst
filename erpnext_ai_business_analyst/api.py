@@ -23,7 +23,7 @@ from erpnext_ai_business_analyst.agent.classifier import classify_question
 from erpnext_ai_business_analyst.agent.persistence import save_investigation_log
 from erpnext_ai_business_analyst.agent.planner import InvestigationResult, InvestigationStep, run_investigation
 from erpnext_ai_business_analyst.reports.catalog import select_dataset
-from erpnext_ai_business_analyst.reports.qa import answer_from_approved_dataset
+from erpnext_ai_business_analyst.reports.qa import answer_from_approved_dataset, answer_from_general_analyst
 from erpnext_ai_business_analyst.skills.base import Evidence, Finding, SkillResult, SkillStatus
 from erpnext_ai_business_analyst.skills.registry import SkillRegistry
 from erpnext_ai_business_analyst.tools.registry import ToolRegistry
@@ -49,14 +49,29 @@ def ask_question(question: str, report_dataset: str | None = None, report_filter
         result = InvestigationResult(status="ok")
         report_answer = answer_from_approved_dataset(question, tool_registry, llm_client, report_dataset, report_filters)
     else:
-        # Exact, user-facing Skill phrases keep priority. If no such phrase
-        # exists, a clear match in the approved report catalog should be used
-        # before broad semantic Skill similarity can select a nearby topic.
+        # Explicit Skill phrases keep priority. A clear catalog report comes
+        # next. For broader inventory questions, the general analyst may pick
+        # only from the same approved report catalog before semantic Skills
+        # are considered.
         explicit_skill = classify_question(question, skill_registry)
         auto_dataset = None if explicit_skill else select_dataset(question)
+        general_report_answer = None
         if auto_dataset:
             result = InvestigationResult(status="ok")
             report_answer = answer_from_approved_dataset(question, tool_registry, llm_client, auto_dataset.name, report_filters)
+        elif not explicit_skill:
+            general_report_answer = answer_from_general_analyst(question, tool_registry, llm_client)
+            if general_report_answer:
+                result = InvestigationResult(status="ok")
+                report_answer = general_report_answer
+            else:
+                result = run_investigation(
+                    question=question,
+                    tool_registry=tool_registry,
+                    skill_registry=skill_registry,
+                    llm_client=llm_client,
+                    embedding_client=embedding_client,
+                )
         else:
             result = run_investigation(
                 question=question,
@@ -65,7 +80,7 @@ def ask_question(question: str, report_dataset: str | None = None, report_filter
                 llm_client=llm_client,
                 embedding_client=embedding_client,
             )
-        if not auto_dataset and result.category == "no_matching_skill" and not result.history:
+        if not auto_dataset and not general_report_answer and result.category == "no_matching_skill" and not result.history:
             report_answer = answer_from_approved_dataset(question, tool_registry, llm_client, filters=report_filters)
     if report_answer:
         report_result = SkillResult(

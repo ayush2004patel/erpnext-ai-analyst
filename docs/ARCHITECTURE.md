@@ -7,9 +7,9 @@ App: `erpnext_ai_business_analyst` · Repo: `erpnext-ai-analyst` · Current targ
 ## 1. Core Pipeline
 
 ```
-Chat UI  →  Investigation Agent (Planner)  →  Skills  →  Tools  →  ERPNext
-                        ↓                        ↓
-                   Evidence/Log  ←────────────────┘
+Chat UI  →  Router  →  Skills / Approved Report Catalog  →  Tools  →  ERPNext
+                    ↓                 ↓                      ↓
+                Planner         General Analyst          Evidence/Log
 ```
 
 MCP sits **beside** this pipeline, exposing the Tools layer only, for external AI clients. It is not in the internal call path.
@@ -100,6 +100,12 @@ A future client-specific app can add its own Skills via its own `hooks.py` — n
 Context sent to planner LLM = **findings + confidence only**, never raw evidence records (evidence stays addressable by ID).
 
 No LangGraph/agent framework — state is a flat list + counter, one structured decision per hop.
+
+### 6.1 General Analyst Fallback
+
+When the question has no direct Skill trigger or report-catalog phrase, and it is inventory-related, the local LLM may select **up to two names** from the fixed `reports.catalog.DATASETS` allowlist. The backend validates every returned name, runs only those existing read-only Tools as the invoking user, and asks the LLM to summarize only the returned rows.
+
+The LLM never receives database credentials, SQL execution capability, or permission to invent datasets, filters, or write actions. Invalid JSON, unknown dataset names, unrelated questions, and unavailable sources fail safely back to the normal planner or a clear no-data answer.
 
 ---
 
