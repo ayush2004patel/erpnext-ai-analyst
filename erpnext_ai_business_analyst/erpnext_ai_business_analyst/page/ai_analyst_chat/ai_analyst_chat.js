@@ -114,6 +114,7 @@ class AIAnalystChat {
 						<button type="button" class="ai-analyst-suggestion" data-question="Which purchase orders will supply stock?">Incoming purchase orders</button>
 						<button type="button" class="ai-analyst-suggestion" data-question="What customer demand is still pending?">Pending customer demand</button>
 						<button type="button" class="ai-analyst-suggestion" data-question="Which batches expire in 90 days?">Batches expiring soon</button>
+						<button type="button" class="ai-analyst-suggestion" data-question="Give me an inventory business intelligence summary with the top risks and actions.">AI inventory summary</button>
 					</div>
 				</div>
 				<div class="ai-analyst-history" style="display: none;">
@@ -494,7 +495,7 @@ class AIAnalystChat {
 
 		if (data.report_answer) {
 			html += `<div class="ai-analyst-finding-title">${frappe.utils.escape_html(data.report_source || 'Approved ERP report')}</div>`;
-			html += `<div class="ai-analyst-finding-summary">${frappe.utils.escape_html(data.report_answer)}</div>`;
+			html += `<div class="ai-analyst-finding-summary">${frappe.utils.escape_html(data.report_answer).replace(/\n/g, '<br>')}</div>`;
 			html += `<div class="ai-analyst-finding-detail">${frappe.utils.escape_html(data.report_evidence_summary || '')}</div>`;
 			if (data.report_records && data.report_records.length) {
 				html += this.format_report_table(data.report_records);

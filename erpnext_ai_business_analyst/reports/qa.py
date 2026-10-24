@@ -11,7 +11,7 @@ from erpnext_ai_business_analyst.tools.base import ToolStatus
 from erpnext_ai_business_analyst.tools.registry import ToolRegistry
 
 MAX_RECORDS_FOR_SUMMARY = 50
-MAX_GENERAL_ANALYST_DATASETS = 2
+MAX_GENERAL_ANALYST_DATASETS = 3
 
 
 @dataclass(frozen=True)
@@ -40,13 +40,13 @@ def select_general_analyst_datasets(question: str, llm_client: LLMClient) -> lis
     catalog = "\n".join(f"- {dataset.name}: {dataset.description}" for dataset in DATASETS)
     system_prompt = (
         "You route ERPNext inventory questions to approved read-only datasets. "
-        "Choose at most two dataset names from the supplied catalog only. "
+        "Choose up to three dataset names from the supplied catalog only when combining them would improve the answer. "
         "Return an empty list for questions that cannot be answered from inventory data. "
         'Respond with only JSON: {"datasets": ["dataset_name"]}.'
     )
     user_prompt = f"Question: {question}\n\nApproved dataset catalog:\n{catalog}"
     try:
-        response = llm_client.complete(system_prompt, user_prompt, max_tokens=180).strip()
+        response = llm_client.complete(system_prompt, user_prompt, max_tokens=220).strip()
         if response.startswith("```"):
             response = response.strip("`").removeprefix("json").strip()
         names = json.loads(response).get("datasets", [])
@@ -103,7 +103,7 @@ def answer_from_approved_dataset(question: str, tool_registry: ToolRegistry, llm
 
 
 def answer_from_general_analyst(question: str, tool_registry: ToolRegistry, llm_client: LLMClient) -> ReportAnswer | None:
-    """Answer broad inventory questions from one or two LLM-selected approved datasets."""
+    """Answer broad inventory questions by combining LLM-selected approved datasets."""
     if not is_inventory_question(question):
         return None
     datasets = select_general_analyst_datasets(question, llm_client)
@@ -125,21 +125,25 @@ def answer_from_general_analyst(question: str, tool_registry: ToolRegistry, llm_
                 break
             display_records.append({"source": dataset.label, **row} if isinstance(row, dict) else {"source": dataset.label, "value": row})
 
-    source_label = " + ".join(dataset.label for dataset in datasets)
+    dataset_labels = " + ".join(dataset.label for dataset in datasets)
+    source_label = f"AI Business Analysis — {dataset_labels}"
     if not sources or not total_records:
         return ReportAnswer(
             f"No records were found in the approved ERP data source(s) selected for this question: {source_label}.",
             source_label, 0, "No matching records", [], {},
         )
 
+    records_per_source = max(1, MAX_RECORDS_FOR_SUMMARY // len(sources))
     source_data = [
-        {"dataset": dataset.label, "records": rows[:MAX_RECORDS_FOR_SUMMARY]}
+        {"dataset": dataset.label, "records": rows[:records_per_source]}
         for dataset, rows, _filters in sources
     ]
     system_prompt = (
         "You are an ERPNext inventory analyst. Answer only from the supplied approved ERP data. "
         "Do not invent facts, calculate from missing values, or claim a source says something it does not. "
-        "Give a concise business answer and state when the returned data is insufficient."
+        "Give a concise BI-style answer. Lead with a one-sentence summary, then provide up to three "
+        "prioritized insights. For each insight, state the risk or opportunity and one recommended action. "
+        "State clearly when the returned data is insufficient."
     )
     user_prompt = f"Question: {question}\n\nApproved data returned:\n{json.dumps(source_data, default=str)}"
     try:
@@ -149,6 +153,6 @@ def answer_from_general_analyst(question: str, tool_registry: ToolRegistry, llm_
     filters = {dataset.name: safe_filters for dataset, _rows, safe_filters in sources}
     return ReportAnswer(
         answer, source_label, total_records,
-        f"{total_records} record(s) returned from approved dataset(s): {source_label}",
+        f"{total_records} record(s) returned from approved dataset(s): {dataset_labels}",
         display_records, filters,
     )

@@ -103,7 +103,7 @@ No LangGraph/agent framework — state is a flat list + counter, one structured 
 
 ### 6.1 General Analyst Fallback
 
-When the question has no direct Skill trigger or report-catalog phrase, and it is inventory-related, the local LLM may select **up to two names** from the fixed `reports.catalog.DATASETS` allowlist. The backend validates every returned name, runs only those existing read-only Tools as the invoking user, and asks the LLM to summarize only the returned rows.
+When the question has no direct Skill trigger or report-catalog phrase, and it is inventory-related, the local LLM may select **up to three names** from the fixed `reports.catalog.DATASETS` allowlist. The backend validates every returned name, runs only those existing read-only Tools as the invoking user, and asks the LLM to combine only the returned rows into prioritized insights, risks, and recommended actions.
 
 The LLM never receives database credentials, SQL execution capability, or permission to invent datasets, filters, or write actions. Invalid JSON, unknown dataset names, unrelated questions, and unavailable sources fail safely back to the normal planner or a clear no-data answer.
 

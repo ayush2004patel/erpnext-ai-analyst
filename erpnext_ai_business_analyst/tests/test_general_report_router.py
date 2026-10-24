@@ -24,12 +24,12 @@ class TestGeneralReportRouter(TestCase):
         )
         self.assertEqual([dataset.name for dataset in datasets], ["stock_balance"])
 
-    def test_limits_the_llm_to_two_approved_datasets(self):
+    def test_limits_the_llm_to_three_approved_datasets(self):
         datasets = select_general_analyst_datasets(
             "Analyse inventory broadly",
-            _RouterLLM('{"datasets": ["stock_balance", "order_commitments", "monthly_consumption"]}'),
+            _RouterLLM('{"datasets": ["stock_balance", "order_commitments", "monthly_consumption", "batch_expiry"]}'),
         )
-        self.assertEqual([dataset.name for dataset in datasets], ["stock_balance", "order_commitments"])
+        self.assertEqual([dataset.name for dataset in datasets], ["stock_balance", "order_commitments", "monthly_consumption"])
 
     def test_unrelated_question_is_not_sent_to_general_router(self):
         self.assertFalse(is_inventory_question("What is the weather today?"))
