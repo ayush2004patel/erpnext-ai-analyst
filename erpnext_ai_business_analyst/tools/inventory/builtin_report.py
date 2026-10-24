@@ -24,11 +24,19 @@ APPROVED_REPORTS = {
     "Sales Order Trends",
 }
 
+# These reports normally receive their defaults from ERPNext's Desk report
+# UI. The AI runner calls them server-side, so it must provide the same safe
+# defaults itself. Users cannot supply arbitrary report filters through chat.
+REPORT_DEFAULT_FILTERS = {
+    "Purchase Order Trends": {"based_on": "Item", "period": "Monthly", "period_based_on": "posting_date"},
+    "Sales Order Trends": {"based_on": "Item", "period": "Monthly"},
+}
+
 
 def _run_builtin_report(report_name: str, filters: dict | None = None) -> ToolResult:
     if report_name not in APPROVED_REPORTS:
         return ToolResult(status=ToolStatus.ERROR, error="This ERPNext report is not approved for AI analysis.")
-    report_filters = dict(filters or {})
+    report_filters = {**REPORT_DEFAULT_FILTERS.get(report_name, {}), **dict(filters or {})}
     row_filters = {key: report_filters.pop(key) for key in ("supplier", "customer") if report_filters.get(key)}
     report_filters.setdefault("from_date", add_days(nowdate(), -90))
     report_filters.setdefault("to_date", nowdate())
