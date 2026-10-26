@@ -32,11 +32,35 @@ REPORT_DEFAULT_FILTERS = {
     "Sales Order Trends": {"based_on": "Item", "period": "Monthly"},
 }
 
+COMPANY_CONTEXT_REPORTS = {
+    "Stock Balance",
+    "Stock Ledger",
+    "Stock Ageing",
+    "Purchase Order Analysis",
+    "Sales Order Analysis",
+    "Warehouse Wise Stock Balance",
+    "Stock Projected Qty",
+    "Item Shortage Report",
+    "Stock and Account Value Comparison",
+    "Purchase Order Trends",
+    "Sales Order Trends",
+}
+
+
+def _get_default_company() -> str | None:
+    """Use the same company defaults ERPNext's Desk report UI uses."""
+    return frappe.defaults.get_user_default("Company") or frappe.defaults.get_default("company")
+
 
 def _run_builtin_report(report_name: str, filters: dict | None = None) -> ToolResult:
     if report_name not in APPROVED_REPORTS:
         return ToolResult(status=ToolStatus.ERROR, error="This ERPNext report is not approved for AI analysis.")
     report_filters = {**REPORT_DEFAULT_FILTERS.get(report_name, {}), **dict(filters or {})}
+    if report_name == "Stock and Account Value Comparison":
+        report_filters.setdefault("as_on_date", nowdate())
+    if report_name in COMPANY_CONTEXT_REPORTS and not report_filters.get("company"):
+        if company := _get_default_company():
+            report_filters["company"] = company
     row_filters = {key: report_filters.pop(key) for key in ("supplier", "customer") if report_filters.get(key)}
     report_filters.setdefault("from_date", add_days(nowdate(), -90))
     report_filters.setdefault("to_date", nowdate())
