@@ -30,9 +30,15 @@ from erpnext_ai_business_analyst.skills.registry import SkillRegistry
 from erpnext_ai_business_analyst.tools.registry import ToolRegistry
 
 
+def _require_analyst_access() -> None:
+    """Keep API access aligned with the System Manager-only Desk page."""
+    frappe.only_for("System Manager")
+
+
 @frappe.whitelist()
 def ask_question(question: str, report_dataset: str | None = None, report_filters: dict | None = None) -> dict:
     """Answer a chat question without exposing local AI-service failures to users."""
+    _require_analyst_access()
     try:
         return _ask_question(question, report_dataset, report_filters)
     except requests.RequestException:
@@ -157,6 +163,7 @@ def _ask_question(question: str, report_dataset: str | None = None, report_filte
 @frappe.whitelist()
 def get_recent_investigations(limit: int = 8) -> list[dict]:
     """Return a small, privacy-scoped list of the current user's investigations."""
+    _require_analyst_access()
     limit = max(1, min(cint(limit), 20))
     return frappe.get_all(
         "AI Investigation Log",
@@ -170,6 +177,7 @@ def get_recent_investigations(limit: int = 8) -> list[dict]:
 @frappe.whitelist()
 def get_inventory_health_summary() -> dict:
     """Return the highest-priority inventory exceptions without using the LLM."""
+    _require_analyst_access()
     tool_registry = ToolRegistry.get()
     skill_registry = SkillRegistry.get()
     cards = [

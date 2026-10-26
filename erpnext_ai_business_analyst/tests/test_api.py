@@ -47,6 +47,12 @@ def _make_dead_stock_item(suffix: str) -> str:
 
 
 class TestAskQuestion(FrappeTestCase):
+    def test_requires_system_manager_access(self):
+        with patch("erpnext_ai_business_analyst.api.frappe.only_for") as only_for:
+            api._require_analyst_access()
+
+        only_for.assert_called_once_with("System Manager")
+
     def test_returns_friendly_message_when_ai_service_is_unavailable(self):
         with (
             patch("erpnext_ai_business_analyst.api._ask_question", side_effect=requests.ConnectionError()),

@@ -76,6 +76,14 @@ def _run_dataset(dataset: ApprovedDataset, tool_registry: ToolRegistry, filters:
     return tool_registry.get_tool(dataset.tool_name)(**inputs), safe_filters
 
 
+def _record_counts(result) -> tuple[int, int, bool]:
+    """Return displayed rows, total matching rows, and whether data was limited."""
+    displayed = len(result.data or [])
+    meta = result.query_meta
+    total = meta.total_row_count if meta and meta.total_row_count is not None else displayed
+    return displayed, total, bool(meta and meta.truncated)
+
+
 def answer_from_approved_dataset(question: str, tool_registry: ToolRegistry, llm_client: LLMClient, dataset_name: str | None = None, filters: dict | None = None) -> ReportAnswer | None:
     dataset = get_dataset(dataset_name) if dataset_name else select_dataset(question)
     if dataset is None:
@@ -85,6 +93,7 @@ def answer_from_approved_dataset(question: str, tool_registry: ToolRegistry, llm
         return ReportAnswer("I could not read the approved ERP data source for this question.", dataset.label, 0, result.error or "Data source unavailable", [], safe_filters)
     if not result.data:
         return ReportAnswer(f"No records were found in {dataset.label} for this question.", dataset.label, 0, "No matching records", [], safe_filters)
+    displayed_count, total_count, truncated = _record_counts(result)
     records = result.data[:MAX_RECORDS_FOR_SUMMARY]
     system_prompt = (
         "You are an ERPNext business-data assistant. Answer only from the supplied approved report data. "
@@ -93,13 +102,16 @@ def answer_from_approved_dataset(question: str, tool_registry: ToolRegistry, llm
     )
     user_prompt = (
         f"Question: {question}\n\nApproved dataset: {dataset.label}\nDescription: {dataset.description}\n"
-        f"Returned records (showing {len(records)} of {len(result.data)}):\n{json.dumps(records, default=str)}"
+        f"Returned records (showing {len(records)} of {total_count}):\n{json.dumps(records, default=str)}"
     )
     try:
         answer = llm_client.complete(system_prompt, user_prompt, max_tokens=350).strip()
     except Exception:
-        answer = f"{len(result.data)} records were found in {dataset.label}. Open the evidence to review the returned data."
-    return ReportAnswer(answer, dataset.label, len(result.data), f"{len(result.data)} record(s) returned from approved dataset: {dataset.label}", records, safe_filters)
+        answer = f"{total_count} records were found in {dataset.label}. Open the evidence to review the returned data."
+    evidence_summary = f"{total_count} record(s) returned from approved dataset: {dataset.label}"
+    if truncated:
+        evidence_summary += f". Showing the first {displayed_count} rows only."
+    return ReportAnswer(answer, dataset.label, total_count, evidence_summary, records, safe_filters)
 
 
 def answer_from_general_analyst(question: str, tool_registry: ToolRegistry, llm_client: LLMClient) -> ReportAnswer | None:
@@ -118,8 +130,9 @@ def answer_from_general_analyst(question: str, tool_registry: ToolRegistry, llm_
         if result.status != ToolStatus.OK:
             continue
         rows = result.data or []
-        total_records += len(rows)
-        sources.append((dataset, rows, safe_filters))
+        _displayed_count, source_total, _truncated = _record_counts(result)
+        total_records += source_total
+        sources.append((dataset, rows, safe_filters, source_total, _truncated))
         for row in rows:
             if len(display_records) == MAX_RECORDS_FOR_SUMMARY:
                 break
@@ -135,8 +148,13 @@ def answer_from_general_analyst(question: str, tool_registry: ToolRegistry, llm_
 
     records_per_source = max(1, MAX_RECORDS_FOR_SUMMARY // len(sources))
     source_data = [
-        {"dataset": dataset.label, "records": rows[:records_per_source]}
-        for dataset, rows, _filters in sources
+        {
+            "dataset": dataset.label,
+            "matching_record_count": source_total,
+            "data_limited": truncated,
+            "records": rows[:records_per_source],
+        }
+        for dataset, rows, _filters, source_total, truncated in sources
     ]
     system_prompt = (
         "You are an ERPNext inventory analyst. Answer only from the supplied approved ERP data. "
@@ -150,7 +168,7 @@ def answer_from_general_analyst(question: str, tool_registry: ToolRegistry, llm_
         answer = llm_client.complete(system_prompt, user_prompt, max_tokens=400).strip()
     except Exception:
         answer = f"{total_records} records were found across {source_label}. Open the returned rows to review the data."
-    filters = {dataset.name: safe_filters for dataset, _rows, safe_filters in sources}
+    filters = {dataset.name: safe_filters for dataset, _rows, safe_filters, _total, _truncated in sources}
     return ReportAnswer(
         answer, source_label, total_records,
         f"{total_records} record(s) returned from approved dataset(s): {dataset_labels}",

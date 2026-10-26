@@ -24,6 +24,12 @@ APPROVED_REPORTS = {
     "Sales Order Trends",
 }
 
+# Query reports return every matching row. Keep a bounded result in the AI
+# response so a broad report cannot fill the web response or the model context.
+# The original count remains in QueryMeta, so callers never mistake this for a
+# complete result set.
+MAX_REPORT_ROWS = 250
+
 # These reports normally receive their defaults from ERPNext's Desk report
 # UI. The AI runner calls them server-side, so it must provide the same safe
 # defaults itself. Users cannot supply arbitrary report filters through chat.
@@ -66,7 +72,10 @@ def _run_builtin_report(report_name: str, filters: dict | None = None) -> ToolRe
     report_filters.setdefault("to_date", nowdate())
     if report_filters.get("item_code"):
         report_filters["item_code"] = [report_filters["item_code"]]
-    if report_filters.get("warehouse"):
+    # Most stock reports accept one or more warehouses. Sales Order Analysis
+    # is different: it binds warehouse with SQL "=" and therefore requires a
+    # scalar value.
+    if report_filters.get("warehouse") and report_name != "Sales Order Analysis":
         report_filters["warehouse"] = [report_filters["warehouse"]]
     try:
         output = run(report_name, filters=report_filters)
@@ -78,9 +87,13 @@ def _run_builtin_report(report_name: str, filters: dict | None = None) -> ToolRe
     for field, value in row_filters.items():
         data = [row for row in data if isinstance(row, dict) and row.get(field) == value]
     report_filters.update(row_filters)
+    total_row_count = len(data)
+    truncated = total_row_count > MAX_REPORT_ROWS
+    data = data[:MAX_REPORT_ROWS]
     return ToolResult(status=ToolStatus.OK, data=data, query_meta=QueryMeta(
         doctype=f"Report: {report_name}", filters=report_filters,
         fields=list(data[0].keys()) if data and isinstance(data[0], dict) else [], row_count=len(data),
+        total_row_count=total_row_count, truncated=truncated,
     ))
 
 

@@ -40,6 +40,8 @@ class QueryMeta:
     filters: dict
     fields: list[str]
     row_count: int
+    total_row_count: int | None = None
+    truncated: bool = False
 
 
 @dataclass
