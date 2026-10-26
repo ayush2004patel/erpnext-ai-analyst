@@ -102,7 +102,7 @@ class TestAskQuestion(FrappeTestCase):
     def test_llm_concludes_with_no_matching_skill_category(self):
         conclude_no_match = '{"action": "CONCLUDE", "category": "no_matching_skill"}'
         with patch("erpnext_ai_business_analyst.api.OllamaClient",
-                    return_value=ScriptedLLMClient([conclude_no_match])):
+                    return_value=ScriptedLLMClient(['{"datasets": []}', conclude_no_match])):
             response = api.ask_question(question="How many items are in my item master?")
 
         self.assertEqual(response["status"], "ok")

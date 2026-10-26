@@ -245,7 +245,7 @@ class TestSemanticRetrievalCandidateSelection(FrappeTestCase):
         self.assertNotIn("inventory.overstock", user_prompt)
         self.assertNotIn("inventory.stockout_risk", user_prompt)
 
-    def test_omitting_embedding_client_still_offers_the_full_registry(self):
+    def test_explicit_trigger_is_used_without_embedding_client(self):
         suffix = frappe.generate_hash(length=6)
         warehouse = create_warehouse(get_or_create_company(), suffix)
 
@@ -256,10 +256,10 @@ class TestSemanticRetrievalCandidateSelection(FrappeTestCase):
             skill_registry=SkillRegistry.get(),
             llm_client=llm,
             initial_inputs={"warehouse": warehouse},
-            # embedding_client intentionally omitted — today's behavior.
+            # embedding_client intentionally omitted. The exact "not moved"
+            # trigger should still take priority over the full registry.
         )
 
         _, user_prompt = llm.calls[0]
-        all_skill_names = [s.name for s in SkillRegistry.get().all()]
-        for name in all_skill_names:
-            self.assertIn(name, user_prompt)
+        self.assertIn("inventory.dead_stock", user_prompt)
+        self.assertNotIn("inventory.overstock", user_prompt)
