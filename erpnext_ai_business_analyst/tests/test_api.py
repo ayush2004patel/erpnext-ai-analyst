@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
+import requests
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
@@ -45,6 +47,18 @@ def _make_dead_stock_item(suffix: str) -> str:
 
 
 class TestAskQuestion(FrappeTestCase):
+    def test_returns_friendly_message_when_ai_service_is_unavailable(self):
+        with (
+            patch("erpnext_ai_business_analyst.api._ask_question", side_effect=requests.ConnectionError()),
+            patch("erpnext_ai_business_analyst.api.save_investigation_log", return_value="AI-LOG-TEST"),
+        ):
+            response = api.ask_question(question="Which items need to be reordered?")
+
+        self.assertEqual(response["status"], "error")
+        self.assertEqual(response["category"], "ai_service_unavailable")
+        self.assertIn("local AI model is unavailable", response["user_message"])
+        self.assertEqual(response["log_name"], "AI-LOG-TEST")
+
     def test_returns_structured_result_with_findings(self):
         suffix = frappe.generate_hash(length=6)
         # Fixture item isn't warehouse-scoped in the API call (ask_question

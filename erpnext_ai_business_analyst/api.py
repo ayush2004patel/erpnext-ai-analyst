@@ -15,6 +15,7 @@ path learned the hard way in Step 10.
 from __future__ import annotations
 
 import frappe
+import requests
 from frappe.utils import cint
 
 from erpnext_ai_business_analyst.agent.llm.ollama_client import OllamaClient
@@ -31,6 +32,35 @@ from erpnext_ai_business_analyst.tools.registry import ToolRegistry
 
 @frappe.whitelist()
 def ask_question(question: str, report_dataset: str | None = None, report_filters: dict | None = None) -> dict:
+    """Answer a chat question without exposing local AI-service failures to users."""
+    try:
+        return _ask_question(question, report_dataset, report_filters)
+    except requests.RequestException:
+        result = InvestigationResult(
+            status="ok",
+            category="ai_service_unavailable",
+            decision_errors=["The configured AI service was unavailable."],
+        )
+        log_name = save_investigation_log(question, result)
+        return {
+            "status": "error",
+            "hop_count": 0,
+            "category": "ai_service_unavailable",
+            "findings": [],
+            "steps": [],
+            "evidence": [],
+            "decision_errors": [],
+            "log_name": log_name,
+            "report_answer": None,
+            "report_source": None,
+            "report_record_count": None,
+            "report_evidence_summary": None,
+            "report_records": [],
+            "user_message": "The local AI model is unavailable right now. Please free system memory or try again shortly.",
+        }
+
+
+def _ask_question(question: str, report_dataset: str | None = None, report_filters: dict | None = None) -> dict:
     if not question or not question.strip():
         frappe.throw("Question is required")
     if isinstance(report_filters, str):

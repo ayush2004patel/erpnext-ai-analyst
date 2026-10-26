@@ -533,6 +533,8 @@ class AIAnalystChat {
 			}
 		} else if (ranAnySkill) {
 			html += `<div class="text-muted">${this.no_data_message(data.steps)}</div>`;
+		} else if (data.category === 'ai_service_unavailable') {
+			html += `<div class="ai-analyst-error">${frappe.utils.escape_html(data.user_message || 'The local AI model is unavailable right now. Please try again shortly.')}</div>`;
 		} else if (data.category === 'conversational') {
 			html += `<div class="text-muted">I'm a focused inventory analyst, not a general
 				assistant. Ask me about stock levels, reorder needs, stockout risk, movement,
